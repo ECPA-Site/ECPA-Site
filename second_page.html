@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Personal Account</title>
+  <style>
+    :root{--bg:#0b0c0f;--card:#15171c;--accent:#8ab4ff;}
+    body{
+      margin:0;
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;
+      background:var(--bg);
+      color:#e4e7eb;
+      padding:20px;
+      position: relative;
+    }
+    .card{
+      height: 900px;
+      width:100%;
+      max-width:1500px;
+      background:var(--card);
+      border-radius:16px;
+      padding:32px;
+      text-align:left;
+      position: relative;
+      z-index: 1;
+    }
+    h1{
+      font-size:60px;
+      margin-bottom:16px;
+      color:#8ab4ff;
+      text-transform:uppercase;
+      position: absolute;
+      top: 0px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+    }
+    img{
+      height: 300px;
+      width: 300px;
+      margin-bottom:16px;
+      margin-left:9px;
+      border-radius:16px; 
+      float: left;
+    }
+    .info{
+      float:left;
+      margin-left:25px;
+      margin-top:20px;
+      font-size:30px;
+    }
+    .info p{
+      margin:10px 0;
+      font-size:35px;
+    }
+    .btn{
+      position:absolute;
+      bottom:32px;
+      right:32px;
+      background:var(--accent);
+      color:#0a0d12;
+      font-weight:600;
+      padding:12px 20px;
+      border-radius:12px;
+      border:0;
+      cursor:pointer;
+      text-transform:uppercase;
+      text-decoration:none;
+      display:inline-block;
+    }
+    .btn:hover{background:#6da4ff}
+    .btn2{
+      position:absolute;
+      bottom:32px;
+      right: 150px;
+      background: #c8ddff;
+      color:#0a0d12;
+      font-weight:600;
+      padding:12px 20px;
+      border-radius:12px;
+      border:0;
+      cursor:pointer;
+      text-transform:uppercase;
+      text-decoration:none;
+      display:inline-block;
+    }
+    .btn2:hover{background:hsl(217, 100%, 82%)}
+  </style>
+</head>
+<body>
+  <h1>Welcome</h1>
+  <main class="card">
+    <img src="Photos/ManInSquare.jpg"Worker Photo">
+
+    <div class="info" id="userinfo">
+      <p>Loading...</p>
+    </div>
+
+    <a id="adminBtn" class="btn2" href="#">Admin Panel</a>
+    <a href="index.html" class="btn">Log Out</a>
+  </main>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const code = params.get("user");
+
+if (!code) {
+    document.getElementById("userinfo").innerHTML = "Ошибка: код не найден";
+}
+
+// 1. Находим имя по коду
+fetch("users.txt")
+  .then(r => r.text())
+  .then(text => {
+      const lines = text.trim().split("\n");
+
+      let username = null;
+
+      for (let line of lines) {
+          const parts = line.split(":"); // [name, pass, code]
+
+          if (parts[2] === code) {
+              username = parts[0];
+              break;
+          }
+      }
+
+      if (!username) {
+          document.getElementById("userinfo").innerHTML = "Пользователь не найден";
+          return;
+      }
+
+      // 2. Ищем инфо в infoUser.txt
+      fetch("infoUser.txt")
+        .then(r => r.text())
+        .then(text2 => {
+            const lines2 = text2.trim().split("\n");
+
+            let userInfo = null;
+
+            for (let line of lines2) {
+                const parts = line.split("|"); // [name, rank, money, photo]
+
+                if (parts[0] === username) {
+                    userInfo = parts;
+                    break;
+                }
+            }
+
+            if (!userInfo) {
+                document.getElementById("userinfo").innerHTML = "Информация о пользователе не найдена";
+                return;
+            }
+
+            // После того как получили userInfo и имя
+            const adminBtn = document.getElementById("adminBtn");
+            if (adminBtn) {
+              // Передаём код пользователя в URL
+              adminBtn.href = "AdminRoom.html?user=" + encodeURIComponent(code);
+            }
+
+
+            const [name, rank, money, photo] = userInfo;
+
+            // Обновляем фото
+            const imgElement = document.querySelector("img");
+            imgElement.src = "Photos/" + photo;
+            imgElement.alt = name + " Photo";
+
+            // Выводим данные
+            document.getElementById("userinfo").innerHTML = `
+                <p><code>name:</code><b> ${name}</b></p>
+                <p><code>rank:</code><b> ${rank}</b></p>
+                <p><code>points:</code><b> ${money}</b>₭</p>
+            `;
+        });
+  });
+</script>
+</body>
+</html>
