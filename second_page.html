@@ -6,117 +6,86 @@
   <title>Personal Account</title>
 
   <style>
-    :root{--bg:#0b0c0f;--card:#15171c;--accent:#8ab4ff;}
+   .card{
+    width:100%;
+    max-width:1700px;
+    background:var(--card);
+    border-radius:16px;
+    padding:32px;
+    padding-top:100px;
+    position:relative;
 
-    body{
-      margin:0;
-      min-height:100vh;
-      background:var(--bg);
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;
-      color:#e4e7eb;
-      padding:20px;
-    }
+    /* главное! */ 
+    display:flex;
+    flex-direction:row;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    gap:30px;
 
-    h1{
-      font-size:50px;
-      color:var(--accent);
-      text-transform:uppercase;
-      position:absolute;
-      top:15px; left:50%;
-      transform:translateX(-50%);
-    }
+    height:auto; /* вот здесь — вся магия */
+}
 
+/* изображение уменьшится на мобилках */
+img{
+    width:280px;
+    height:280px;
+    object-fit:cover;
+    border-radius:18px;
+}
+
+/* текст */
+.info p{ font-size:32px; margin:8px 0; }
+
+/* кнопки закреплены внизу контейнера */
+.btn,.btn2{
+    position:absolute;
+    bottom:30px;
+    padding:14px 24px;
+    font-weight:600;
+    text-decoration:none;
+    border-radius:12px;
+}
+
+/* расположение */
+.btn{ right:30px; background:var(--accent); color:#0a0d12; }
+.btn:hover{background:#6aa2ff}
+
+.btn2{ right:160px; background:#c8ddff; color:#0a0d12; }
+.btn2:hover{background:hsl(217,100%,85%)}
+
+
+/* ==================== MOBILE ==================== */
+
+/* Планшеты */
+@media(max-width:900px){
     .card{
-      width:100%;
-      max-width:1700px;
-      min-height: calc(100vh - 120px);
-      max-height: 300px;
-      background:var(--card);
-      border-radius:16px;
-      padding:32px;
-      text-align:left;
-      position:relative;
-      display:flex;
-      flex-direction:row;
-      flex-wrap:wrap;
-      gap:25px;
-      justify-content:center;
-      padding-top:100px;
+        flex-direction:column;
+        align-items:center;
+        text-align:center;
+        padding-bottom:120px; /* место для кнопок */
     }
-
-    img{
-      width:290px;
-      height:290px;
-      border-radius:18px;
-      object-fit:cover;
-    }
-
-    .info{
-      font-size:28px;
-      min-width:250px;
-    }
-    .info p{
-      font-size:32px;
-      margin:12px 0;
-    }
-
     .btn,.btn2{
-      position:absolute;
-      bottom:30px;
-      padding:13px 23px;
-      border-radius:12px;
-      font-weight:600;
-      cursor:pointer;
-      text-transform:uppercase;
-      text-decoration:none;
-    }
-
-    .btn{
-      right:30px;
-      background:var(--accent);
-      color:#0a0d12;
-    }
-    .btn:hover{background:#6aa2ff}
-
-    .btn2{
-      right:170px;
-      background:#c8ddff;
-      color:#0a0d12;
-    }
-    .btn2:hover{background:hsl(217,100%,85%)}
-
-
-    /* ---------- MOBILE адаптация ---------- */
-    @media(max-width:900px){
-      .card{flex-direction:column;align-items:center;text-align:center;}
-      h1{font-size:38px;}
-      img{width:240px;height:240px;}
-      .info{font-size:25px;}
-      .info p{font-size:28px;}
-    }
-
-    @media(max-width:600px){
-      h1{font-size:32px;}
-      img{width:70vw;height:70vw;}
-      .info p{font-size:24px;}
-      .btn,.btn2{
         position:relative;
+        bottom:auto;
+        right:auto;
         width:80%;
         margin-top:10px;
-        right:auto; bottom:auto;
-        display:block;
         text-align:center;
-      }
-      .btn2{margin-top:15px;}
+        display:block;
     }
+}
 
-    @media(max-width:400px){
-      h1{font-size:26px;}
-      .info p{font-size:20px;}
-    }
+/* Смартфоны */
+@media(max-width:600px){
+    img{ width:65vw; height:65vw; }
+    .info p{ font-size:26px; }
+}
+
+/* Очень маленькие (меньше iPhone SE) */
+@media(max-width:400px){
+    img{ width:75vw; height:75vw; }
+    .info p{ font-size:22px; }
+}
   </style>
 </head>
 <body>
