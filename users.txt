@@ -1,5 +1,5 @@
-Daniil:67676788:dog
+Daniil:67676788:x1
 Yasha:CatCat:cat
-Valera:KabanEdik.com:babun
-Tim AL:12345678Qwe:meow
-Anfisa:Anfisa:makaka
+Valera:KabanEdik.com:x3
+Tim AL:12345678Qwe:x4
+Anfisa:Anfisa:x5
