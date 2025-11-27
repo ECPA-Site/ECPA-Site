@@ -1,132 +1,186 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Personal Account</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Personal Account</title>
 
-  <style>
-   .card{
+<style>
+:root { --bg:#0b0c0f; --card:#15171c; --accent:#8ab4ff; }
+
+body{
+    margin:0;
+    min-height:100vh;
+    display:grid;
+    place-items:center;
+    font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;
+    background:var(--bg);
+    color:#e4e7eb;
+    padding:20px;
+    position: relative;
+}
+
+.card{
+    height: 900px;
     width:100%;
-    max-width:1700px;
+    max-width:1500px;
     background:var(--card);
     border-radius:16px;
     padding:32px;
-    padding-top:100px;
-    position:relative;
-
-    /* главное! */ 
-    display:flex;
-    flex-direction:row;
-    align-items:flex-start;
-    flex-wrap:wrap;
-    gap:30px;
-
-    height:auto; /* вот здесь — вся магия */
+    text-align:left;
+    position: relative;
+    z-index: 1;
 }
 
-/* изображение уменьшится на мобилках */
-img{
-    width:280px;
-    height:280px;
-    object-fit:cover;
-    border-radius:18px;
-}
-
-/* текст */
-.info p{ font-size:32px; margin:8px 0; }
-
-/* кнопки закреплены внизу контейнера */
-.btn,.btn2{
+h1{
+    font-size:60px;
+    margin-bottom:16px;
+    color:#8ab4ff;
+    text-transform:uppercase;
     position:absolute;
-    bottom:30px;
-    padding:14px 24px;
+    top:0px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:2;
+}
+
+img{
+    height:300px;
+    width:300px;
+    margin-bottom:16px;
+    margin-left:9px;
+    border-radius:16px;
+    float:left;
+}
+
+.info{
+    float:left;
+    margin-left:25px;
+    margin-top:20px;
+    font-size:30px;
+}
+
+.info p{
+    margin:10px 0;
+    font-size:35px;
+}
+
+.btn{
+    position:absolute;
+    bottom:32px;
+    right:32px;
+    background:var(--accent);
+    color:#0a0d12;
     font-weight:600;
-    text-decoration:none;
+    padding:12px 20px;
     border-radius:12px;
+    border:0;
+    cursor:pointer;
+    text-transform:uppercase;
+    text-decoration:none;
 }
 
-/* расположение */
-.btn{ right:30px; background:var(--accent); color:#0a0d12; }
-.btn:hover{background:#6aa2ff}
+.btn:hover{ background:#6da4ff; }
 
-.btn2{ right:160px; background:#c8ddff; color:#0a0d12; }
-.btn2:hover{background:hsl(217,100%,85%)}
-
-
-/* ==================== MOBILE ==================== */
-
-/* Планшеты */
-@media(max-width:900px){
-    .card{
-        flex-direction:column;
-        align-items:center;
-        text-align:center;
-        padding-bottom:120px; /* место для кнопок */
-    }
-    .btn,.btn2{
-        position:relative;
-        bottom:auto;
-        right:auto;
-        width:80%;
-        margin-top:10px;
-        text-align:center;
-        display:block;
-    }
+.btn2{
+    position:absolute;
+    bottom:32px;
+    right:150px;
+    background:#c8ddff;
+    color:#0a0d12;
+    font-weight:600;
+    padding:12px 20px;
+    border-radius:12px;
+    cursor:pointer;
+    text-transform:uppercase;
+    text-decoration:none;
 }
 
-/* Смартфоны */
-@media(max-width:600px){
-    img{ width:65vw; height:65vw; }
-    .info p{ font-size:26px; }
-}
-
-/* Очень маленькие (меньше iPhone SE) */
-@media(max-width:400px){
-    img{ width:75vw; height:75vw; }
-    .info p{ font-size:22px; }
-}
-  </style>
+.btn2:hover{ background:hsl(217,100%,82%); }
+</style>
 </head>
+
 <body>
 
 <h1>Welcome</h1>
 
 <main class="card">
-  <img src="Photos/ManInSquare.jpg" alt="Worker Photo">
+    <img src="Photos/ManInSquare.jpg" alt="Worker Photo">
+    <div class="info" id="userinfo"><p>Loading...</p></div>
 
-  <div class="info" id="userinfo">
-      <p>Loading...</p>
-  </div>
-
-  <a id="adminBtn" class="btn2">Admin Panel</a>
-  <a href="index.html" class="btn">Log Out</a>
+    <a id="adminBtn" class="btn2" href="#">Admin Panel</a>
+    <a href="index.html" class="btn">Log Out</a>
 </main>
 
 <script>
-const params=new URLSearchParams(window.location.search);
-const code=params.get("user");
+const params = new URLSearchParams(window.location.search);
+const code = params.get("user");
 
-if(!code){document.getElementById("userinfo").innerHTML="Ошибка: код не найден";}
+if (!code) {
+    document.getElementById("userinfo").innerHTML = "Ошибка: код не найден";
+}
 
-fetch("users.txt").then(r=>r.text()).then(text=>{
-  const user=text.trim().split("\n").map(l=>l.split(":")).find(p=>p[2]===code);
-  if(!user){return document.getElementById("userinfo").innerHTML="Пользователь не найден";}
-  fetch("infoUser.txt").then(r=>r.text()).then(data=>{
-    const info=data.trim().split("\n").map(l=>l.split("|")).find(p=>p[0]===user[0]);
-    if(!info){return document.getElementById("userinfo").innerHTML="Информация не найдена";}
-    document.getElementById("adminBtn").href="AdminRoom.html?user="+encodeURIComponent(code);
-    const [name,rank,money,photo]=info;
-    const img=document.querySelector("img");
-    img.src="Photos/"+photo;
-    img.alt=name+" Photo";
-    document.getElementById("userinfo").innerHTML=
-    `<p><code>name:</code><b> ${name}</b></p>
-     <p><code>rank:</code><b> ${rank}</b></p>
-     <p><code>points:</code><b> ${money}</b>₭</p>`;
-  })
-})
+// 1) Находим имя по коду
+fetch("users.txt")
+.then(r => r.text())
+.then(text => {
+    const lines = text.trim().split("\n");
+    let username = null;
+
+    for (let line of lines) {
+        const parts = line.split(":"); // name : pass : code
+        if (parts[2] === code) {
+            username = parts[0];
+            break;
+        }
+    }
+
+    if (!username) {
+        document.getElementById("userinfo").innerHTML = "Пользователь не найден";
+        return;
+    }
+
+    // 2) Получаем инфо пользователя
+    fetch("infoUser.txt")
+    .then(r => r.text())
+    .then(text2 => {
+        const lines2 = text2.trim().split("\n");
+        let userInfo = null;
+
+        for (let line of lines2) {
+            const parts = line.split("|"); // name | rank | money | photo
+            if (parts[0] === username) {
+                userInfo = parts;
+                break;
+            }
+        }
+
+        if (!userInfo) {
+            document.getElementById("userinfo").innerHTML = "Информация о пользователе не найдена";
+            return;
+        }
+
+        const [name, rank, money, photo] = userInfo;
+
+        // Обновляем ссылку к админке
+        const adminBtn = document.getElementById("adminBtn");
+        adminBtn.href = "AdminRoom.html?user=" + encodeURIComponent(code);
+
+        // Обновляем фото
+        const imgElement = document.querySelector("img");
+        imgElement.src = "Photos/" + photo;
+        imgElement.alt = name + " Photo";
+
+        // Вывод информации
+        document.getElementById("userinfo").innerHTML = `
+            <p><code>name:</code> <b>${name}</b></p>
+            <p><code>rank:</code> <b>${rank}</b></p>
+            <p><code>points:</code> <b>${money}</b>₭</p>
+        `;
+    });
+});
 </script>
 
 </body>
 </html>
+
