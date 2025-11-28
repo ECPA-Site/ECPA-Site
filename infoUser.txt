@@ -3,4 +3,4 @@ Yasha|S.B.A.(cat)|CAT |Yasha.jpg
 Valera|S.B.A.|666|Valera.jpg
 Tim AL|Vice Director N.V.D.|10000|Tim.jpg
 Anfisa|Director N.V.D.|100000|Anfisa.jpg
-Vlad|Sergeant|300|Vlad.jpg
+Vlad|Senior Sergeant|300|Vlad.jpg
