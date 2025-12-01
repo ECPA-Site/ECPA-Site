@@ -5,3 +5,4 @@ Tim AL|Vice Director N.V.D.|10000|Tim.jpg
 Anfisa|Director N.V.D.|676767|Anfisa.jpg
 Vlad|Senior Sergeant|2500|Vlad.jpg
 Danya|Mega Pig|PIG|Danya.jpg
+Sasha|Sergeant Military Instructor|5500|Sasha.jpg
