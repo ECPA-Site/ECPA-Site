@@ -1,6 +1,6 @@
 Daniil|S.B.A.|333|Daniil.jpg
-Yasha|S.B.A.(cat)|CAT |Yasha.jpg
-Valera|S.B.A.|666|Valera.jpg
+Yasha|S.B.A.(cat)|CAT|Yasha.jpg
+Valera|S.B.A.|777777777|Valera.jpg
 Tim AL|Vice Director N.V.D.|10000|Tim.jpg
 Anfisa|Director N.V.D.|100000|Anfisa.jpg
 Vlad|Senior Sergeant|2500|Vlad.jpg
