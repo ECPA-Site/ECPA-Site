@@ -4,3 +4,4 @@ Valera:KabanEdik.com:x3
 Tim AL:12345678Qwe:x4
 Anfisa:Anfisa:x5
 Vlad:Vlad:x6
+Danya:Danya:x7
