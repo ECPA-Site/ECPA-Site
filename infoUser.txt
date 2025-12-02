@@ -8,3 +8,4 @@ Danya|Mega Pig|PIG|Danya.jpg
 Sasha|Sergeant Military Instructor|5500|Sasha.jpg
 Grisha|Mega Pig|PIG|Grisha.jpg
 German|Senior Soldat|500|German.jpg
+Timur|Anomalies: "FG" Class: Medium|No|Timur.jpg
