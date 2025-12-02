@@ -7,3 +7,4 @@ Vlad:Vlad:x6
 Danya:Danya:x7
 Sasha:1254.1254_negrph:x8
 Grisha:Grisha:x9
+German:DeadCool:10
