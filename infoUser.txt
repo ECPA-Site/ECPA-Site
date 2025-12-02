@@ -6,3 +6,4 @@ Anfisa|Director N.V.D.|676767|Anfisa.jpg
 Vlad|Senior Sergeant|2500|Vlad.jpg
 Danya|Mega Pig|PIG|Danya.jpg
 Sasha|Sergeant Military Instructor|5500|Sasha.jpg
+Grisha|Mega Pig|PIG|Grisha.jpg
