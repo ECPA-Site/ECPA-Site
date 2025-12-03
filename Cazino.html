@@ -1,114 +1,176 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fortune Wheel</title>
-    <style>
-  body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background: #f0f0f0;
-    font-family: sans-serif;
-  }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Wheel of Fortune</title>
 
-  .wheel-container {
-    position: relative;
-    width: 300px;
-    height: 300px;
-    margin-bottom: 20px;
-  }
+<style>
+:root {
+  --bg:#0e0f11;
+  --card:#15171c;
+  --accent:#8ab4ff;
+  --muted:#7a808a;
+  --border:#1f2228;
+}
 
-  .wheel {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: conic-gradient(
-      #ff4c4c 0deg 60deg,
-      #ffb84c 60deg 120deg,
-      #4cff4c 120deg 180deg,
-      #4cfff6 180deg 240deg,
-      #4c4cff 240deg 300deg,
-      #ff4cff 300deg 360deg
-    );
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    transition: transform 5s cubic-bezier(0.33, 1, 0.68, 1);
-  }
+* { box-sizing: border-box; }
 
-  .wheel span {
-    position: absolute;
-    font-weight: bold;
-    color: white;
-    transform: translate(-50%, -50%);
-  }
+body {
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:var(--bg);
+  color:#e4e7eb;
+  font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;
+  padding:20px;
+}
 
-  .wheel span:nth-child(1) { top: 20%; left: 50%; }
-  .wheel span:nth-child(2) { top: 50%; left: 80%; }
-  .wheel span:nth-child(3) { top: 80%; left: 50%; }
-  .wheel span:nth-child(4) { top: 50%; left: 20%; }
-  .wheel span:nth-child(5) { top: 35%; left: 35%; }
-  .wheel span:nth-child(6) { top: 65%; left: 65%; }
+.card {
+  background:var(--card);
+  border-radius:18px;
+  padding:32px;
+  width:100%;
+  max-width:470px;
+  border:1px solid var(--border);
+  box-shadow:0 8px 30px rgba(0,0,0,0.4);
+  text-align:center;
+}
 
-  .pointer {
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 15px solid transparent;
-    border-right: 15px solid transparent;
-    border-bottom: 30px solid #333;
-  }
+h1 {
+  margin:0 0 15px;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
 
-  button {
-    padding: 10px 20px;
-    font-size: 18px;
-    cursor: pointer;
-  }
+#result {
+  margin-top:12px;
+  min-height:24px;
+  font-size:17px;
+  color:var(--accent);
+  font-weight:600;
+}
+
+.wheel-container {
+  margin:20px auto;
+  width:260px;
+  height:260px;
+  position:relative;
+}
+
+.wheel {
+  width:100%;
+  height:100%;
+  border-radius:50%;
+  background:conic-gradient(
+    #ff4c4c 0deg 60deg,
+    #ffb84c 60deg 120deg,
+    #4cff4c 120deg 180deg,
+    #4cfff6 180deg 240deg,
+    #4c4cff 240deg 300deg,
+    #ff4cff 300deg 360deg
+  );
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  transition:transform 5s cubic-bezier(.33,1,.68,1);
+  position:relative;
+}
+
+.wheel span {
+  position:absolute;
+  color:#fff;
+  font-size:20px;
+  font-weight:700;
+  transform:translate(-50%, -50%);
+}
+
+.wheel span:nth-child(1){ top:10%; left:50%; }
+.wheel span:nth-child(2){ top:35%; left:88%; }
+.wheel span:nth-child(3){ top:75%; left:75%; }
+.wheel span:nth-child(4){ top:88%; left:50%; }
+.wheel span:nth-child(5){ top:75%; left:22%; }
+.wheel span:nth-child(6){ top:35%; left:12%; }
+
+.pointer {
+  width:0;
+  height:0;
+  border-left:13px solid transparent;
+  border-right:13px solid transparent;
+  border-top:25px solid var(--accent); /* стрелка вниз */
+  position:absolute;
+  top: -15px; /* подвигаем к краю */
+  left:50%;
+  transform:translateX(-50%);
+}
+
+.btn {
+  background:var(--accent);
+  color:#0a0d12;
+  padding:12px 18px;
+  border-radius:12px;
+  font-weight:600;
+  text-transform:uppercase;
+  border:0;
+  font-size:15px;
+  cursor:pointer;
+  transition:0.2s;
+}
+.btn:hover { background:#6da4ff; }
+.btn:disabled { opacity:0.5; cursor:not-allowed; }
+
 </style>
 </head>
 <body>
 
-<div class="wheel-container">
-  <div class="wheel" id="wheel">
-    <span>1</span>
-    <span>2</span>
-    <span>3</span>
-    <span>4</span>
-    <span>5</span>
-    <span>6</span>
-  </div>
-  <div class="pointer"></div>
-</div>
+<main class="card">
+  <h1>Wheel of Fortune</h1>
 
-<button id="spin">Крутить колесо!</button>
+  <div class="wheel-container">
+    <div class="wheel" id="wheel">
+      <span>1</span>
+      <span>2</span>
+      <span>3</span>
+      <span>4</span>
+      <span>5</span>
+      <span>6</span>
+    </div>
+    <div class="pointer"></div>
+  </div>
+
+  <button id="spin" class="btn">Spin</button>
+
+  <div id="result"></div>
+</main>
 
 <script>
-  const wheel = document.getElementById('wheel');
-  const button = document.getElementById('spin');
-  let deg = 0;
+const wheel = document.getElementById("wheel");
+const btn = document.getElementById("spin");
+const result = document.getElementById("result");
 
-  button.addEventListener('click', () => {
-    const randomSpin = Math.floor(Math.random() * 360) + 720; // минимум 2 полных оборота
-    deg += randomSpin;
-    wheel.style.transform = `rotate(${deg}deg)`;
+let deg = 0;
 
-    // Вычисляем результат после анимации
-    const segments = 6;
-    const segmentAngle = 360 / segments;
-    setTimeout(() => {
-      const actualDeg = deg % 360;
-      const selectedSegment = segments - Math.floor(actualDeg / segmentAngle);
-      alert(`Выпало число: ${selectedSegment === 0 ? 6 : selectedSegment}`);
-    }, 5000); // совпадает с временем transition
-  });
+btn.addEventListener("click", () => {
+  btn.disabled = true;
+  result.textContent = "";
+
+  const spin = 720 + Math.floor(Math.random() * 360);
+  deg += spin;
+  wheel.style.transform = `rotate(${deg}deg)`;
+
+  setTimeout(() => {
+    const actual = deg % 360;
+    const segment = 6;
+    const angle = 360 / segment;
+    let selected = segment - Math.floor(actual / angle);
+    if (selected === 0) selected = 6;
+
+    result.textContent = "Result: " + selected;
+    btn.disabled = false;
+  }, 5000);
+});
 </script>
 
 </body>
