@@ -7,5 +7,5 @@ Vlad|Senior Sergeant|2500|Vlad.jpg
 Danya|Mega Pig|PIG|Danya.jpg
 Sasha|Sergeant Military Instructor|5500|Sasha.jpg
 Grisha|Mega Pig|PIG|Grisha.jpg
-German|Senior Soldat|500|German.jpg
+German|Senior Soldier|500|German.jpg
 Timur|Anomalies: "FG" Class: Medium|No|Timur.jpg
