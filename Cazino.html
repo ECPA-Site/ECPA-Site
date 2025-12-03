@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fortune Wheel</title>
+    <style>
+  body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #f0f0f0;
+    font-family: sans-serif;
+  }
+
+  .wheel-container {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    margin-bottom: 20px;
+  }
+
+  .wheel {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(
+      #ff4c4c 0deg 60deg,
+      #ffb84c 60deg 120deg,
+      #4cff4c 120deg 180deg,
+      #4cfff6 180deg 240deg,
+      #4c4cff 240deg 300deg,
+      #ff4cff 300deg 360deg
+    );
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    transition: transform 5s cubic-bezier(0.33, 1, 0.68, 1);
+  }
+
+  .wheel span {
+    position: absolute;
+    font-weight: bold;
+    color: white;
+    transform: translate(-50%, -50%);
+  }
+
+  .wheel span:nth-child(1) { top: 20%; left: 50%; }
+  .wheel span:nth-child(2) { top: 50%; left: 80%; }
+  .wheel span:nth-child(3) { top: 80%; left: 50%; }
+  .wheel span:nth-child(4) { top: 50%; left: 20%; }
+  .wheel span:nth-child(5) { top: 35%; left: 35%; }
+  .wheel span:nth-child(6) { top: 65%; left: 65%; }
+
+  .pointer {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-bottom: 30px solid #333;
+  }
+
+  button {
+    padding: 10px 20px;
+    font-size: 18px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="wheel-container">
+  <div class="wheel" id="wheel">
+    <span>1</span>
+    <span>2</span>
+    <span>3</span>
+    <span>4</span>
+    <span>5</span>
+    <span>6</span>
+  </div>
+  <div class="pointer"></div>
+</div>
+
+<button id="spin">Крутить колесо!</button>
+
+<script>
+  const wheel = document.getElementById('wheel');
+  const button = document.getElementById('spin');
+  let deg = 0;
+
+  button.addEventListener('click', () => {
+    const randomSpin = Math.floor(Math.random() * 360) + 720; // минимум 2 полных оборота
+    deg += randomSpin;
+    wheel.style.transform = `rotate(${deg}deg)`;
+
+    // Вычисляем результат после анимации
+    const segments = 6;
+    const segmentAngle = 360 / segments;
+    setTimeout(() => {
+      const actualDeg = deg % 360;
+      const selectedSegment = segments - Math.floor(actualDeg / segmentAngle);
+      alert(`Выпало число: ${selectedSegment === 0 ? 6 : selectedSegment}`);
+    }, 5000); // совпадает с временем transition
+  });
+</script>
+
+</body>
+</html>
