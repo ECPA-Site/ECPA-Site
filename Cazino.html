@@ -80,20 +80,22 @@ h1 {
 }
 
 .wheel span {
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform-origin:0  -110px; /* расстояние от центра */
-  font-size:22px;
-  font-weight:700;
-  color:#fff;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-origin: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
 }
-.wheel span:nth-child(1){ transform:rotate(0deg); }
-.wheel span:nth-child(2){ transform:rotate(60deg); }
-.wheel span:nth-child(3){ transform:rotate(120deg); }
-.wheel span:nth-child(4){ transform:rotate(180deg); }
-.wheel span:nth-child(5){ transform:rotate(240deg); }
-.wheel span:nth-child(6){ transform:rotate(300deg); }
+
+/* Расположение по кругу */
+.wheel span:nth-child(1){ transform: rotate(0deg) translateY(-115px); }
+.wheel span:nth-child(2){ transform: rotate(60deg) translateY(-115px); }
+.wheel span:nth-child(3){ transform: rotate(120deg) translateY(-115px); }
+.wheel span:nth-child(4){ transform: rotate(180deg) translateY(-115px); }
+.wheel span:nth-child(5){ transform: rotate(240deg) translateY(-115px); }
+.wheel span:nth-child(6){ transform: rotate(300deg) translateY(-115px); }
 
 .pointer {
   width:0;
