@@ -9,3 +9,4 @@ Sasha|Sergeant Military Instructor|5500|Sasha.jpg
 Grisha|Mega Pig|PIG|Grisha.jpg
 German|Caprol|500|German.jpg
 Timur|Anomalies: "FG-1-01" Class: Medium|No|Timur.jpg
+Polina|Director of Human Resources|10000|Polina.jpg
