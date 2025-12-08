@@ -11,3 +11,4 @@ German|Caprol|500|German.jpg
 Timur|Anomalies: "FG-1-01" Class: Medium|No|Timur.jpg
 Polina|Director of Human Resources|10000|Polina.jpg
 Arina|Vip Mini Pig|PIG|Arina.jpg
+Yaroslav T|Vip|100|YaroslavT.jpg
