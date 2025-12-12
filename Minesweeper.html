@@ -1,802 +1,319 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Minesweeper — Secret Style</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Minesweeper — Secret Style</title>
+<style>
+:root{
+  --bg:#0e0f11;
+  --card:#15171c;
+  --accent:#8ab4ff;
+  --muted:#7a808a;
+  --border:#1f2228;
+  --cell:#1a1c22;
+  --cell-hover:#22252c;
+  --cell-open:#0f1114;
+  --explode:#ff6b6b;
+  --flag:#ffd479;
+}
 
-  <style>
-    :root{
-      --bg:#0e0f11;
-      --card:#15171c;
-      --accent:#8ab4ff;
-      --muted:#7a808a;
-      --border:#1f2228;
+*{box-sizing:border-box;user-select:none;-webkit-tap-highlight-color: transparent;}
 
-      --cell:#1a1c22;
-      --cell-hover:#22252c;
-      --cell-open:#0f1114;
+body{
+  margin:0;
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;
+  background:var(--bg);
+  color:#e4e7eb;
+  padding:20px;
+}
 
-      --explode:#ff6b6b;
-      --flag:#ffd479;
-    }
+.card{
+  width:100%;
+  max-width:480px;
+  background:var(--card);
+  border-radius:16px;
+  padding:28px;
+  border:1px solid var(--border);
+  box-shadow:0 8px 30px rgba(0,0,0,0.4);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
 
-    *{
-      box-sizing:border-box;
-      user-select:none;
-      -webkit-tap-highlight-color: transparent;
-    }
+h1{
+  font-size:24px;
+  margin:0 0 6px;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  text-align:center;
+}
+p.lead{
+  color:var(--muted);
+  font-size:14px;
+  text-align:center;
+  margin:0 0 18px;
+}
 
-    body{
-      margin:0;
-      min-height:100vh;
-      display:grid;
-      place-items:center;
-      font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;
-      background:var(--bg);
-      color:#e4e7eb;
-      padding:20px;
-    }
+.top-bar{
+  display:flex;
+  justify-content:center;
+  margin-bottom:16px;
+}
 
-    .card{
-      width:100%;
-      max-width:480px;
-      background:var(--card);
-      border-radius:16px;
-      padding:28px;
-      border:1px solid var(--border);
-      box-shadow:0 8px 30px rgba(0,0,0,0.4);
-    }
+.select{
+  background:#1a1c22;
+  color:#e4e7eb;
+  border-radius:10px;
+  border:1px solid var(--border);
+  padding:10px 12px;
+  font-size:14px;
+}
 
-    h1{
-      font-size:24px;
-      margin:0 0 6px;
-      letter-spacing:.5px;
-      text-transform:uppercase;
-      text-align:center;
-    }
+/* Игровое поле */
+#board{
+  display:grid;
+  gap:4px;
+  width:100%;
+  margin-top:20px;
+  overflow: hidden;
+}
 
-    p.lead{
-      color:var(--muted);
-      font-size:14px;
-      text-align:center;
-      margin:0 0 18px;
-    }
+/* Клетки */
+.cell{
+  background:var(--cell);
+  border:1px solid var(--border);
+  border-radius:6px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:20px;
+  font-weight:600;
+  cursor:pointer;
+  transition:transform .12s cubic-bezier(.2,1.7,.6,1), background .2s, opacity .25s;
+}
 
-    /* --- Верхняя панель сложности --- */
-    .top-bar{
-      display:flex;
-      justify-content:center;
-      margin-bottom:16px;
-    }
+.cell:hover{background:var(--cell-hover);}
+.cell:active{transform:scale(.85);}
+.cell.open{background:var(--cell-open); cursor:default; transform:scale(1)!important; opacity:1; animation:fadeInCell .18s ease;}
+.cell.flag{color:var(--flag);}
+.cell.mine{color:var(--explode);}
+.explode{animation:boom .3s ease-out;}
 
-    .select{
-      background:#1a1c22;
-      color:#e4e7eb;
-      border-radius:10px;
-      border:1px solid var(--border);
-      padding:10px 12px;
-      font-size:14px;
-    }
+@keyframes fadeInCell{
+  0%{opacity:0; transform:scale(.7);}
+  100%{opacity:1; transform:scale(1);}
+}
+@keyframes boom{
+  0%{transform:scale(1); box-shadow:0 0 0 rgba(255,0,0,0);}
+  40%{transform:scale(1.25); box-shadow:0 0 18px rgba(255,50,50,0.6);}
+  100%{transform:scale(1); box-shadow:0 0 0 rgba(255,0,0,0);}
+}
 
-    /* --- Игровое поле --- */
-    .board{
-      display:grid;
-      gap:6px;
-      justify-content:center;
-      margin-top:10px;
-      transition:0.2s;
-    }
+.bottom-bar{
+  margin-top:18px;
+  display:flex;
+  justify-content:space-between;
+  width:100%;
+  align-items:center;
+}
+.counter{color:var(--muted); font-size:14px;}
+.btn{
+  background:var(--accent);
+  color:#0a0d12;
+  font-weight:600;
+  padding:10px 16px;
+  border-radius:12px;
+  border:0;
+  cursor:pointer;
+  font-size:14px;
+  transition:0.2s;
+  text-transform:uppercase;
+}
+.btn:hover{background:#6da4ff;}
 
-    .cell{
-      width:40px;
-      height:40px;
-      background:var(--cell);
-      border-radius:10px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:20px;
-      cursor:pointer;
-      border:1px solid var(--border);
+.msg{
+  margin-top:12px;
+  text-align:center;
+  font-size:15px;
+  color:var(--muted);
+  min-height:22px;
+}
 
-      /* анимация клика */
-      transition:transform .12s cubic-bezier(.2,1.7,.6,1), background .2s, opacity .25s;
-    }
-
-    .cell:hover{
-      background:var(--cell-hover);
-    }
-
-    /* эффект: при нажатии уменьшается */
-    .cell:active{
-      transform:scale(.85);
-    }
-
-    /* плавное открытие клетки */
-    .cell.open{
-      background:var(--cell-open);
-      cursor:default;
-      border-color:#000;
-      transform:scale(1)!important;
-      opacity:1;
-      animation:fadeInCell .18s ease;
-    }
-
-    @keyframes fadeInCell{
-      0%{opacity:0; transform:scale(.7);}
-      100%{opacity:1; transform:scale(1);}
-    }
-
-    /* флаг */
-    .cell.flag{
-      color:var(--flag);
-    }
-
-    /* мина */
-    .cell.mine{
-      color:var(--explode);
-    }
-
-    /* взрывная анимация */
-    .explode{
-      animation:boom .3s ease-out;
-    }
-
-    @keyframes boom{
-      0%{transform:scale(1); box-shadow:0 0 0 rgba(255,0,0,0);}
-      40%{transform:scale(1.25); box-shadow:0 0 18px rgba(255,50,50,0.6);}
-      100%{transform:scale(1); box-shadow:0 0 0 rgba(255,0,0,0);}
-    }
-
-    /* низ */
-    .bottom-bar{
-      margin-top:18px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-    }
-
-    .counter{
-      color:var(--muted);
-      font-size:14px;
-    }
-
-    .btn{
-      background:var(--accent);
-      color:#0a0d12;
-      font-weight:600;
-      padding:10px 16px;
-      border-radius:12px;
-      border:0;
-      cursor:pointer;
-      font-size:14px;
-      transition:0.2s;
-      text-transform:uppercase;
-    }
-
-    .btn:hover{
-      background:#6da4ff;
-    }
-
-    /* адаптация телефона */
-    @media (max-width:480px){
-      .cell{width:34px;height:34px;font-size:18px;}
-      .board{gap:4px;}
-    }
-
-    .msg{
-      margin-top:12px;
-      text-align:center;
-      font-size:15px;
-      color:var(--muted);
-      min-height:22px;
-    }
-  </style>
+/* Адаптация под телефон */
+@media (max-width:480px){
+  .cell{font-size:16px;}
+  #board{gap:3px;}
+}
+</style>
 </head>
-
 <body>
 <main class="card">
-  <h1>Minesweeper</h1>
-  <p class="lead">Dark UI — Secret Fund Style</p>
-
-  <div class="top-bar">
-    <select id="difficulty" class="select">
-      <option value="easy">Лёгкая (8×8, 10 мин)</option>
-      <option value="medium">Средняя (12×12, 20 мин)</option>
-      <option value="hard">Сложная (16×16, 40 мин)</option>
-    </select>
-  </div>
-
-  <div id="board" class="board"></div>
-  <div id="message" class="msg"></div>
-
-  <div class="bottom-bar">
-    <div class="counter">Flags: <span id="flagCount">0</span></div>
-    <button class="btn" id="restart">Restart</button>
-  </div>
+<h1>Minesweeper</h1>
+<p class="lead">Dark UI — Secret Fund Style</p>
+<div class="top-bar">
+  <select id="difficulty" class="select">
+    <option value="easy">Лёгкая (8×8, 10 мин)</option>
+    <option value="medium">Средняя (12×12, 20 мин)</option>
+    <option value="hard">Сложная (16×16, 40 мин)</option>
+  </select>
+</div>
+<div id="board"></div>
+<div id="message" class="msg"></div>
+<div class="bottom-bar">
+  <div class="counter">Flags: <span id="flagCount">0</span></div>
+  <button class="btn" id="restart">Restart</button>
+</div>
 </main>
-<script>
-/* ====== Параметры сложности ====== */
-let SIZE = 8;
-let MINES = 10;
 
-/* ====== Переменные игры ====== */
-let board = [];
-let minePositions = [];
-let flags = 0;
-let revealed = 0;
-let gameOver = false;
+<script>
+// Звуки (минимальные, встроенные)
+const sndClick = new Audio("data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA...");
+const sndFlag  = new Audio("data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA...");
+const sndBoom  = new Audio("data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA...");
+const sndWin   = new Audio("data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA...");
+
+[sndClick, sndFlag, sndBoom, sndWin].forEach(a=>a.volume=0.4);
+
+// Параметры
+let SIZE=8, MINES=10;
+let board=[], minePositions=[], revealed=0, flags=0, gameOver=false;
 
 const boardEl = document.getElementById("board");
 const msgEl = document.getElementById("message");
 const flagCountEl = document.getElementById("flagCount");
 const diffEl = document.getElementById("difficulty");
 
-/* ====== Аудио ====== */
-const soundClick = new Audio("data:audio/wav;base64,UklGRlQAAABXQVZFZm10IB4E...");  /* короткий клик */
-const soundFlag  = new Audio("data:audio/wav;base64,UklGRlQAAABXQVZFZm10IB4E...");  /* флаг */
-const soundBoom  = new Audio("data:audio/wav;base64,UklGRlQAAABXQVZFZm10IB4E...");  /* взрыв */
-const soundWin   = new Audio("data:audio/wav;base64,UklGRlQAAABXQVZFZm10IB4E...");  /* победа */
-
-/* (Звуки вставлю нормальные в части 3) */
-
-
-/* ====== Запуск игры ====== */
-init();
-
-/* Смена сложности */
-diffEl.onchange = () => {
-  const d = diffEl.value;
-  if (d === "easy") { SIZE = 8; MINES = 10; }
-  if (d === "medium") { SIZE = 12; MINES = 20; }
-  if (d === "hard") { SIZE = 16; MINES = 40; }
-  init();
+const difficultyPresets={
+  easy:{size:8,mines:10},
+  medium:{size:12,mines:22},
+  hard:{size:16,mines:40}
 };
 
-/* Restart */
-document.getElementById("restart").onclick = init;
-
-
-/* ===========================
-      ИНИЦИАЛИЗАЦИЯ ИГРЫ
-   =========================== */
-function init(){
-  board = [];
-  minePositions = [];
-  flags = 0;
-  revealed = 0;
-  gameOver = false;
-
-  msgEl.textContent = "";
-  flagCountEl.textContent = flags;
-
-  boardEl.innerHTML = "";
-  boardEl.style.gridTemplateColumns = `repeat(${SIZE}, 40px)`;
-
-  generateBoard();
-  placeMines();
-  calculateNumbers();
-  renderBoard();
-}
-
-
-/* Создание структуры поля */
-function generateBoard(){
-  for(let r=0; r<SIZE; r++){
-    board[r] = [];
-    for(let c=0; c<SIZE; c++){
-      board[r][c] = {
-        r,c,
-        mine:false,
-        number:0,
-        open:false,
-        flag:false,
-      };
-    }
-  }
-}
-
-
-/* Расставляем мины */
-function placeMines(){
-  while(minePositions.length < MINES){
-    const r = Math.floor(Math.random()*SIZE);
-    const c = Math.floor(Math.random()*SIZE);
-
-    const cell = board[r][c];
-    if(!cell.mine){
-      cell.mine = true;
-      minePositions.push(cell);
-    }
-  }
-}
-
-
-/* Счёт чисел */
-function calculateNumbers(){
-  for(let r=0;r<SIZE;r++){
-    for(let c=0;c<SIZE;c++){
-      if(board[r][c].mine) continue;
-      board[r][c].number = neighbors(r,c).filter(n=>n.mine).length;
-    }
-  }
-}
-
-
-/* Соседние клетки */
-function neighbors(r,c){
-  let arr=[];
-  for(let dr=-1;dr<=1;dr++){
-    for(let dc=-1;dc<=1;dc++){
-      if(dr===0 && dc===0) continue;
-      const nr=r+dr, nc=c+dc;
-      if(nr>=0 && nr<SIZE && nc>=0 && nc<SIZE){
-        arr.push(board[nr][nc]);
-      }
-    }
-  }
-  return arr;
-}
-
-
-/* ===========================
-             РЕНДЕР
-   =========================== */
-function renderBoard(){
-  for(let r=0;r<SIZE;r++){
-    for(let c=0;c<SIZE;c++){
-      const cell = board[r][c];
-
-      const div = document.createElement("div");
-      div.className = "cell";
-      div.dataset.r = r;
-      div.dataset.c = c;
-
-      /* ПКМ для флага */
-      div.addEventListener("contextmenu", rightClick);
-
-      /* ЛКМ (открыть) */
-      div.addEventListener("click", leftClick);
-
-      /* Мобайл: долгий тап = флаг */
-      let pressTimer = null;
-      div.addEventListener('touchstart', e=>{
-        pressTimer = setTimeout(()=> rightClick(e), 350);
-      });
-      div.addEventListener('touchend', e=>{
-        clearTimeout(pressTimer);
-      });
-
-      boardEl.appendChild(div);
-    }
-  }
-}
-
-
-/* ===========================
-     --- ОБРАБОТКА КЛИКОВ ---
-   =========================== */
-
-function leftClick(e){
-  if(gameOver) return;
-
-  const r = +e.target.dataset.r;
-  const c = +e.target.dataset.c;
-  const cell = board[r][c];
-
-  if(cell.flag || cell.open) return;
-
-  soundClick.currentTime = 0;
-  soundClick.play();
-
-  openCell(cell);
-}
-
-
-function rightClick(e){
-  e.preventDefault();
-  if(gameOver) return;
-
-  const r = +e.target.dataset.r;
-  const c = +e.target.dataset.c;
-  const cell = board[r][c];
-
-  if(cell.open) return;
-
-  cell.flag = !cell.flag;
-
-  flags += cell.flag ? 1 : -1;
-  flagCountEl.textContent = flags;
-
-  const div = getDiv(cell);
-  div.textContent = cell.flag ? "⚑" : "";
-  div.classList.toggle("flag", cell.flag);
-
-  soundFlag.currentTime = 0;
-  soundFlag.play();
-}
-
-
-/* ===========================
-          ОТКРЫТИЕ КЛЕТКИ
-   =========================== */
-
-function openCell(cell){
-  if(cell.open) return;
-
-  cell.open = true;
-  revealed++;
-
-  const div = getDiv(cell);
-  div.classList.add("open");
-
-  if(cell.mine){
-    div.textContent = "💥";
-    div.classList.add("mine","explode");
-
-    soundBoom.currentTime = 0;
-    soundBoom.play();
-
-    gameLose();
-    return;
-  }
-
-  if(cell.number > 0){
-    div.textContent = cell.number;
-  } else {
-    div.textContent = "";
-    neighbors(cell.r, cell.c).forEach(n=>{
-      if(!n.open && !n.mine) openCell(n);
-    });
-  }
-
-  checkWin();
-}
-
-
-/* Поиск DIV клетки */
-function getDiv(cell){
-  return boardEl.children[cell.r*SIZE + cell.c];
-}
-
-
-/* ===========================
-              ПРОИГРЫШ
-   =========================== */
-function gameLose(){
-  gameOver = true;
-  msgEl.textContent = "💀 Game Over";
-
-  minePositions.forEach(m=>{
-    const d = getDiv(m);
-    if(!m.open){
-      d.textContent = "💥";
-      d.classList.add("mine","open","explode");
-    }
-  });
-}
-
-
-/* ===========================
-               ПОБЕДА
-   =========================== */
-function checkWin(){
-  if(revealed === SIZE*SIZE - MINES){
-    gameOver = true;
-    msgEl.textContent = "🏆 You Win!";
-
-    soundWin.currentTime = 0;
-    soundWin.play();
-  }
-}
-</script>
-<script>
-// -------------------------
-// ЛЁГКИЕ ЗВУКИ (BASE64)
-// -------------------------
-const sndClick = new Audio("data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA...");
-const sndFlag  = new Audio("data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA...");
-const sndBoom  = new Audio("data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA...");
-const sndWin   = new Audio("data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA...");
-
-// Маленький хак чтобы звуки всегда были готовы
-[sndClick, sndFlag, sndBoom, sndWin].forEach(a => a.volume = 0.4);
-
-
-// -------------------------
-// НАСТРОЙКИ СЛОЖНОСТИ
-// -------------------------
-const difficultyPresets = {
-  easy:   { size: 8,  mines: 10 },
-  medium: { size: 12, mines: 22 },
-  hard:   { size: 16, mines: 40 }
-};
-
-let size = 8;
-let minesCount = 10;
-
-document.getElementById("difficulty").addEventListener("change", e => {
-  const v = e.target.value;
-  size = difficultyPresets[v].size;
-  minesCount = difficultyPresets[v].mines;
+// Смена сложности
+diffEl.onchange = ()=>{
+  const v=diffEl.value;
+  SIZE=difficultyPresets[v].size;
+  MINES=difficultyPresets[v].mines;
   resetGame();
-});
+};
 
+// Инициализация
+function resetGame(){
+  board=[]; minePositions=[]; revealed=0; flags=0; gameOver=false;
+  flagCountEl.textContent=flags; msgEl.textContent="";
+  boardEl.innerHTML="";
+  boardEl.style.gridTemplateColumns=`repeat(${SIZE},1fr)`;
 
-// -------------------------
-// ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ИГРЫ
-// -------------------------
-let board = [];
-let minePositions = [];
-let revealed = 0;
-let flags = 0;
-let gameOver = false;
+  // Создание клеток
+  for(let x=0;x<SIZE;x++){
+    board[x]=[];
+    for(let y=0;y<SIZE;y++){
+      board[x][y]={mine:false, revealed:false, flagged:false, number:0};
+      const cell=document.createElement("div");
+      cell.className="cell";
+      cell.dataset.x=x; cell.dataset.y=y;
 
-
-// -------------------------
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-// -------------------------
-
-// Координаты всё внутри поля?
-function inBounds(x, y) {
-  return x >= 0 && x < size && y >= 0 && y < size;
-}
-
-// Получить ID клетки типа "c-3-5"
-function cellId(x, y) {
-  return `c-${x}-${y}`;
-}
-
-// Получить HTML-элемент клетки
-function getCell(x, y) {
-  return document.getElementById(cellId(x, y));
-}
-
-// Перемешать массив
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-</script>
-  <script>
-// -------------------------
-// СОЗДАНИЕ ИГРОВОГО ПОЛЯ
-// -------------------------
-function generateBoard() {
-  board = [];
-  minePositions = [];
-  revealed = 0;
-  flags = 0;
-  gameOver = false;
-
-  const container = document.getElementById("board");
-  container.innerHTML = "";
-  container.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-
-  // Генерируем пустую матрицу
-  for (let x = 0; x < size; x++) {
-    board[x] = [];
-    for (let y = 0; y < size; y++) {
-      board[x][y] = {
-        mine: false,
-        revealed: false,
-        flagged: false,
-        number: 0
-      };
-
-      const cell = document.createElement("div");
-      cell.className = "cell";
-      cell.id = cellId(x, y);
-      cell.dataset.x = x;
-      cell.dataset.y = y;
-
-      // ЛКМ — открыть
-      cell.addEventListener("click", handleClick);
-
-      // ПКМ — флаг
-      cell.addEventListener("contextmenu", e => {
-        e.preventDefault();
-        toggleFlag(x, y);
-      });
-
-      // На телефоне: удержание = флаг
+      cell.addEventListener("click",()=>handleClick(x,y));
+      cell.addEventListener("contextmenu",e=>{e.preventDefault(); toggleFlag(x,y);});
+      // Телефон: удержание
       let touchTimer;
-      cell.addEventListener("touchstart", () => {
-        touchTimer = setTimeout(() => toggleFlag(x, y), 400);
-      });
-      cell.addEventListener("touchend", () => clearTimeout(touchTimer));
+      cell.addEventListener('touchstart',()=>{touchTimer=setTimeout(()=>toggleFlag(x,y),400);});
+      cell.addEventListener('touchend',()=>clearTimeout(touchTimer));
 
-      container.appendChild(cell);
+      boardEl.appendChild(cell);
     }
   }
 
   // Ставим мины
-  const spots = [];
-  for (let x = 0; x < size; x++)
-    for (let y = 0; y < size; y++)
-      spots.push([x, y]);
-
-  shuffle(spots);
-
-  for (let i = 0; i < minesCount; i++) {
-    const [x, y] = spots[i];
-    board[x][y].mine = true;
-    minePositions.push([x, y]);
+  const spots=[];
+  for(let x=0;x<SIZE;x++)for(let y=0;y<SIZE;y++)spots.push([x,y]);
+  for(let i=0;i<MINES;i++){
+    const [x,y]=spots.splice(Math.floor(Math.random()*spots.length),1)[0];
+    board[x][y].mine=true; minePositions.push([x,y]);
   }
 
-  // Считаем цифры
-  for (let x = 0; x < size; x++) {
-    for (let y = 0; y < size; y++) {
-      if (board[x][y].mine) continue;
-
-      let cnt = 0;
-      for (let dx = -1; dx <= 1; dx++) {
-        for (let dy = -1; dy <= 1; dy++) {
-          if (dx === 0 && dy === 0) continue;
-          const nx = x + dx, ny = y + dy;
-          if (inBounds(nx, ny) && board[nx][ny].mine) cnt++;
-        }
+  // Счёт чисел
+  for(let x=0;x<SIZE;x++){
+    for(let y=0;y<SIZE;y++){
+      if(board[x][y].mine) continue;
+      let cnt=0;
+      for(let dx=-1;dx<=1;dx++) for(let dy=-1;dy<=1;dy++){
+        if(dx===0&&dy===0) continue;
+        const nx=x+dx, ny=y+dy;
+        if(nx>=0&&nx<SIZE&&ny>=0&&ny<SIZE&&board[nx][ny].mine) cnt++;
       }
-      board[x][y].number = cnt;
+      board[x][y].number=cnt;
     }
   }
 }
 
-
-// -------------------------
-// ОТКРЫТЬ КЛЕТКУ
-// -------------------------
-function handleClick(e) {
-  if (gameOver) return;
-
-  const x = +this.dataset.x;
-  const y = +this.dataset.y;
-  const cell = board[x][y];
-
-  if (cell.revealed || cell.flagged) return;
-
-  revealCell(x, y);
-
-  // Анимация клика
-  this.style.transform = "scale(0.92)";
-  setTimeout(() => (this.style.transform = "scale(1)"), 120);
-
-  // Проверка победы
-  if (revealed === size * size - minesCount) {
-    winGame();
-  }
+function handleClick(x,y){
+  if(gameOver) return;
+  const cell=board[x][y];
+  if(cell.revealed||cell.flagged) return;
+  revealCell(x,y);
+  const el=getCell(x,y);
+  el.style.transform="scale(0.92)";
+  setTimeout(()=>el.style.transform="scale(1)",120);
+  if(revealed===SIZE*SIZE-MINES) winGame();
 }
 
-
-// -------------------------
-// ОТКРЫТИЕ
-// -------------------------
-function revealCell(x, y) {
-  const cell = board[x][y];
-  if (cell.revealed || cell.flagged) return;
-
-  const el = getCell(x, y);
-  cell.revealed = true;
-  revealed++;
-
+function revealCell(x,y){
+  const cell=board[x][y];
+  if(cell.revealed||cell.flagged) return;
+  cell.revealed=true; revealed++;
+  const el=getCell(x,y);
   el.classList.add("open");
-  sndClick.currentTime = 0;
-  sndClick.play();
+  sndClick.currentTime=0; sndClick.play();
+  if(cell.mine){boom(x,y); return;}
+  if(cell.number===0){el.textContent=""; revealAround(x,y);} else {el.textContent=cell.number;}
+}
 
-  // Если мина — проигрыш
-  if (cell.mine) {
-    boom(x, y);
-    return;
-  }
-
-  // Если 0 — раскрываем вокруг
-  if (cell.number === 0) {
-    el.textContent = "";
-    revealAround(x, y);
-  } else {
-    el.textContent = cell.number;
-    el.style.color = numberColor(cell.number);
+function revealAround(x,y){
+  for(let dx=-1;dx<=1;dx++) for(let dy=-1;dy<=1;dy++){
+    if(dx===0&&dy===0) continue;
+    const nx=x+dx, ny=y+dy;
+    if(nx>=0&&nx<SIZE&&ny>=0&&ny<SIZE) revealCell(nx,ny);
   }
 }
 
-
-// -------------------------
-// АВТО-РАСКРЫТИЕ
-// -------------------------
-function revealAround(x, y) {
-  for (let dx = -1; dx <= 1; dx++) {
-    for (let dy = -1; dy <= 1; dy++) {
-      if (dx === 0 && dy === 0) continue;
-      const nx = x + dx, ny = y + dy;
-      if (inBounds(nx, ny)) revealCell(nx, ny);
-    }
-  }
-}
-
-
-// -------------------------
-// ФЛАГ
-// -------------------------
-function toggleFlag(x, y) {
-  if (gameOver) return;
-  const cell = board[x][y];
-  const el = getCell(x, y);
-
-  if (cell.revealed) return;
-
-  cell.flagged = !cell.flagged;
+function toggleFlag(x,y){
+  if(gameOver) return;
+  const cell=board[x][y];
+  const el=getCell(x,y);
+  if(cell.revealed) return;
+  cell.flagged=!cell.flagged;
   el.classList.toggle("flag");
-
-  sndFlag.currentTime = 0;
-  sndFlag.play();
+  sndFlag.currentTime=0; sndFlag.play();
+  flags+=cell.flagged?1:-1;
+  flagCountEl.textContent=flags;
 }
 
-
-// -------------------------
-// ВЗРЫВ
-// -------------------------
-function boom(x, y) {
-  gameOver = true;
-
-  sndBoom.currentTime = 0;
-  sndBoom.play();
-
-  const el = getCell(x, y);
-  el.style.background = "#ff4f4f";
-
-  // Тряска
-  document.body.classList.add("shake");
-  setTimeout(() => document.body.classList.remove("shake"), 500);
-
-  // Показать все мины
-  minePositions.forEach(([mx, my]) => {
-    const c = getCell(mx, my);
-    c.classList.add("open");
-    c.style.background = board[mx][my].mine ? "#b12222" : "";
-    c.textContent = "💣";
+function boom(x,y){
+  gameOver=true;
+  sndBoom.currentTime=0; sndBoom.play();
+  const el=getCell(x,y); el.style.background="#ff4f4f";
+  minePositions.forEach(([mx,my])=>{
+    const c=getCell(mx,my); c.classList.add("open"); if(board[mx][my].mine)c.textContent="💣";
   });
 }
 
-
-// -------------------------
-// ПОБЕДА
-// -------------------------
-function winGame() {
-  gameOver = true;
-
-  sndWin.currentTime = 0;
-  sndWin.play();
-
-  setTimeout(() => {
-    alert("🎉 Победа! Ты разминировал поле.");
-  }, 150);
+function winGame(){
+  gameOver=true;
+  sndWin.currentTime=0; sndWin.play();
+  setTimeout(()=>alert("🎉 Победа!"),150);
 }
 
+function getCell(x,y){return boardEl.children[x*SIZE+y];}
 
-// -------------------------
-// ЦВЕТ ЦИФРЫ
-// -------------------------
-function numberColor(n) {
-  return ["#9ec2ff", "#90f2c5", "#ffec80", "#ffb28a",
-          "#ff8a8a", "#e6a0ff", "#b2b2b2", "#ffffff"][n-1];
-}
+document.getElementById("restart").onclick=resetGame;
 
-
-// -------------------------
-// СБРОС ИГРЫ
-// -------------------------
-function resetGame() {
-  generateBoard();
-}
-
-document.getElementById("restart").onclick = resetGame;
-
-// Старт
-generateBoard();
-
+// Старт игры
+resetGame();
 </script>
+</body>
+</html>
