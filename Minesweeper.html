@@ -27,15 +27,30 @@
     }
     p.lead{color:var(--muted); font-size:14px; text-align:center; margin:0 0 18px;}
 
-    /* Контейнер кнопок */
+    /* Верхняя панель */
     .top-bar{
-      display:flex; justify-content:space-between;
-      margin-bottom:16px; align-items:center;
+      display:flex;
+      justify-content:center;
+      margin-bottom:16px;
+    }
+
+    .select{
+      background:#1a1c22; color:#e4e7eb;
+      border-radius:10px; border:1px solid var(--border);
+      padding:10px 12px; font-size:14px;
+    }
+
+    /* Низ панели */
+    .bottom-bar{
+      margin-top:16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
     }
 
     .btn{
       background:var(--accent); color:#0a0d12; font-weight:600;
-      padding:10px 14px; border-radius:12px; border:0; cursor:pointer;
+      padding:10px 16px; border-radius:12px; border:0; cursor:pointer;
       font-size:14px; transition:0.2s; text-transform:uppercase;
     }
     .btn:hover{background:#6da4ff}
@@ -56,12 +71,14 @@
       display:flex; align-items:center; justify-content:center;
       font-size:18px; cursor:pointer;
       border:1px solid var(--border);
-      transition:0.15s;
+      transition:transform .08s ease, background .2s;
     }
     .cell:hover{background:var(--cell-hover)}
+    .cell:active{transform:scale(.88)}
+
     .cell.open{
       background:var(--cell-open); cursor:default;
-      border-color:#000;
+      border-color:#000; transform:none;
     }
     .cell.mine{color:#ff6b6b;}
     .cell.flag{color:#ffd479;}
@@ -79,19 +96,30 @@
   <h1>Minesweeper</h1>
   <p class="lead">Dark UI — Secret Fund Style</p>
 
+  <!-- Выбор сложности -->
   <div class="top-bar">
-    <div class="counter">Flags: <span id="flagCount">0</span></div>
-    <button class="btn" id="restart">Restart</button>
+    <select id="difficulty" class="select">
+      <option value="easy">Лёгкая (8×8, 10 мин)</option>
+      <option value="medium">Средняя (12×12, 20 мин)</option>
+      <option value="hard">Сложная (16×16, 40 мин)</option>
+    </select>
   </div>
 
   <div id="board" class="board"></div>
   <div id="message" class="msg"></div>
+
+  <!-- Низ игры -->
+  <div class="bottom-bar">
+    <div class="counter">Flags: <span id="flagCount">0</span></div>
+    <button class="btn" id="restart">Restart</button>
+  </div>
+
 </main>
 
 <script>
-/* ПАРАМЕТРЫ */
-const SIZE = 8;
-const MINES = 10;
+/* ----- ПАРАМЕТРЫ ----- */
+let SIZE = 8;
+let MINES = 10;
 
 let board = [];
 let minePositions = [];
@@ -102,16 +130,23 @@ let gameOver = false;
 const boardEl = document.getElementById("board");
 const msgEl = document.getElementById("message");
 const flagCountEl = document.getElementById("flagCount");
+const diffEl = document.getElementById("difficulty");
 
-boardEl.style.gridTemplateColumns = `repeat(${SIZE}, 36px)`;
-
-/* Запуск */
+/* Запуск игры */
 init();
 
-/* Рестарт */
+/* Смена сложности */
+diffEl.onchange = () => {
+  const d = diffEl.value;
+  if (d === "easy") { SIZE = 8; MINES = 10; }
+  if (d === "medium") { SIZE = 12; MINES = 20; }
+  if (d === "hard") { SIZE = 16; MINES = 40; }
+  init();
+};
+
 document.getElementById("restart").onclick = init;
 
-/* ------------ ЛОГИКА ИНИЦИАЛИЗАЦИИ ------------ */
+/* ----- ИНИЦИАЛИЗАЦИЯ ----- */
 function init(){
   board = [];
   minePositions = [];
@@ -123,6 +158,7 @@ function init(){
   flagCountEl.textContent = flags;
 
   boardEl.innerHTML = "";
+  boardEl.style.gridTemplateColumns = `repeat(${SIZE}, 36px)`;
 
   generateBoard();
   placeMines();
@@ -130,23 +166,17 @@ function init(){
   renderBoard();
 }
 
-/* Создание массива клеток */
+/* Создание массива */
 function generateBoard(){
-  for(let r = 0; r < SIZE; r++){
+  for(let r=0;r<SIZE;r++){
     board[r] = [];
-    for(let c = 0; c < SIZE; c++){
-      board[r][c] = {
-        r, c,
-        mine:false,
-        number:0,
-        open:false,
-        flag:false
-      };
+    for(let c=0;c<SIZE;c++){
+      board[r][c] = { r, c, mine:false, number:0, open:false, flag:false };
     }
   }
 }
 
-/* Расставляем мины */
+/* Расстановка мин */
 function placeMines(){
   while(minePositions.length < MINES){
     let r = Math.floor(Math.random()*SIZE);
@@ -159,7 +189,7 @@ function placeMines(){
   }
 }
 
-/* Считаем соседние мины */
+/* Подсчёт чисел */
 function calculateNumbers(){
   for(let r=0;r<SIZE;r++){
     for(let c=0;c<SIZE;c++){
@@ -169,7 +199,7 @@ function calculateNumbers(){
   }
 }
 
-/* Список соседей */
+/* Соседи */
 function neighbors(r,c){
   let list=[];
   for(let dr=-1; dr<=1; dr++){
@@ -184,7 +214,7 @@ function neighbors(r,c){
   return list;
 }
 
-/* ------------ РЕНДЕР ------------ */
+/* Рендер */
 function renderBoard(){
   for(let r=0;r<SIZE;r++){
     for(let c=0;c<SIZE;c++){
@@ -202,10 +232,9 @@ function renderBoard(){
   }
 }
 
-/* ------------ КЛИКИ ------------ */
+/* ЛКМ */
 function leftClick(e){
   if(gameOver) return;
-
   const r = +e.target.dataset.r;
   const c = +e.target.dataset.c;
   const cell = board[r][c];
@@ -215,6 +244,7 @@ function leftClick(e){
   openCell(cell);
 }
 
+/* ПКМ */
 function rightClick(e){
   e.preventDefault();
   if(gameOver) return;
@@ -234,7 +264,7 @@ function rightClick(e){
   div.classList.toggle("flag", cell.flag);
 }
 
-/* ------------ ОТКРЫТИЕ КЛЕТКИ ------------ */
+/* Открытие клетки */
 function openCell(cell){
   if(cell.open) return;
 
@@ -263,12 +293,12 @@ function openCell(cell){
   checkWin();
 }
 
-/* ------------ ПОИСК DIV КЛЕТКИ ------------ */
+/* DIV клетки */
 function getDiv(cell){
   return boardEl.children[cell.r * SIZE + cell.c];
 }
 
-/* ------------ ПРОИГРЫШ / ПОБЕДА ------------ */
+/* Проигрыш */
 function gameLose(){
   gameOver = true;
   msgEl.textContent = "💀 Game Over";
@@ -282,6 +312,7 @@ function gameLose(){
   });
 }
 
+/* Победа */
 function checkWin(){
   if(revealed === SIZE*SIZE - MINES){
     gameOver = true;
