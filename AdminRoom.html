@@ -108,14 +108,13 @@
 
 
 
-<script> 
-
+<script>
 const params = new URLSearchParams(window.location.search);
 const code = params.get("user");
 
 if (!code) {
     document.getElementById("userinfo").innerHTML = "Ошибка: код не найден";
-    document.getElementById("adminName").innerHTML = "Ошибка: код не найден";
+    document.getElementById("userName").innerHTML = "Ошибка: код не найден";
 }
 
 // 1. Находим имя по коду
@@ -137,7 +136,7 @@ fetch("users.txt")
 
       if (!username) {
           document.getElementById("userinfo").innerHTML = "Пользователь не найден";
-          document.getElementById("adminName").innerHTML = "Пользователь не найден";
+          document.getElementById("userName").innerHTML = "Пользователь не найден";
           return;
       }
 
@@ -171,8 +170,7 @@ fetch("users.txt")
               adminBtn.href = "second_page.html?user=" + encodeURIComponent(code);
             }
 
-            const [name, rank, money, photo] = userInfo
-            const [name, rank, money, photo] = userName
+            const [name, rank, money, photo] = userInfo;
 
             // Выводим данные
             document.getElementById("userinfo").innerHTML = `
