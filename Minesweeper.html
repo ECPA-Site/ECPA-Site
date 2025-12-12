@@ -73,36 +73,48 @@ p.lead{
   font-size:14px;
 }
 
-/* Игровое поле */
-#board{
-  display:grid;
+#board {
+  display: grid;
   gap:4px;
   width:100%;
   margin-top:20px;
-  overflow: hidden;
+
+  /* адаптивная высота: высота = ширина * size/size = автоматически */
+  /* убираем фиксированный aspect-ratio */
 }
 
-/* Клетки */
-.cell{
+.cell {
   background:var(--cell);
   border:1px solid var(--border);
   border-radius:6px;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:20px;
+  font-size:calc(24px * (480px / (SIZE*32))); /* адаптивный шрифт */
   font-weight:600;
   cursor:pointer;
-  transition:transform .12s cubic-bezier(.2,1.7,.6,1), background .2s, opacity .25s;
+  transition: transform .12s, background .2s, opacity .25s;
   position: relative;
+
+  /* ключевое: ширина и высота = 100% / количество клеток */
+  width: calc(100% / var(--size));
+  padding-top: calc(100% / var(--size)); /* для квадрата */
 }
 
 .cell:hover{background:var(--cell-hover);}
 .cell:active{transform:scale(.85);}
-.cell.open{background:var(--cell-open); cursor:default; transform:scale(1)!important; opacity:1; animation:fadeInCell .25s ease; display:flex; align-items:center; justify-content:center; font-weight:700;}
+.cell.open[data-number]:not(.flag) {
+  font-size: calc(0.6 * (100% / var(--size)));
+}
 .cell.flag::after{content:"🚩"; position:absolute; font-size:18px;}
 .cell.mine{color:var(--explode);}
 .explode{animation:boom .3s ease-out;}
+
+.cell.flag::after {
+  content:"🚩";
+  position:absolute;
+  font-size: calc(0.6 * (100% / var(--size))); /* масштабируем по размеру клетки */
+}
 
 @keyframes fadeInCell{
   0%{opacity:0; transform:scale(.7);}
@@ -211,6 +223,7 @@ diffEl.onchange=()=>{
 
 // Создание поля
 function resetGame(){
+  boardEl.style.setProperty('--size', SIZE);
   board=[]; minePositions=[]; revealed=0; flags=0; gameOver=false;
   flagCountEl.textContent=flags; msgEl.textContent="";
   boardEl.innerHTML="";
