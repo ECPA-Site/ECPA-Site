@@ -563,3 +563,240 @@ function shuffle(arr) {
 }
 
 </script>
+  <script>
+// -------------------------
+// СОЗДАНИЕ ИГРОВОГО ПОЛЯ
+// -------------------------
+function generateBoard() {
+  board = [];
+  minePositions = [];
+  revealed = 0;
+  flags = 0;
+  gameOver = false;
+
+  const container = document.getElementById("board");
+  container.innerHTML = "";
+  container.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+
+  // Генерируем пустую матрицу
+  for (let x = 0; x < size; x++) {
+    board[x] = [];
+    for (let y = 0; y < size; y++) {
+      board[x][y] = {
+        mine: false,
+        revealed: false,
+        flagged: false,
+        number: 0
+      };
+
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      cell.id = cellId(x, y);
+      cell.dataset.x = x;
+      cell.dataset.y = y;
+
+      // ЛКМ — открыть
+      cell.addEventListener("click", handleClick);
+
+      // ПКМ — флаг
+      cell.addEventListener("contextmenu", e => {
+        e.preventDefault();
+        toggleFlag(x, y);
+      });
+
+      // На телефоне: удержание = флаг
+      let touchTimer;
+      cell.addEventListener("touchstart", () => {
+        touchTimer = setTimeout(() => toggleFlag(x, y), 400);
+      });
+      cell.addEventListener("touchend", () => clearTimeout(touchTimer));
+
+      container.appendChild(cell);
+    }
+  }
+
+  // Ставим мины
+  const spots = [];
+  for (let x = 0; x < size; x++)
+    for (let y = 0; y < size; y++)
+      spots.push([x, y]);
+
+  shuffle(spots);
+
+  for (let i = 0; i < minesCount; i++) {
+    const [x, y] = spots[i];
+    board[x][y].mine = true;
+    minePositions.push([x, y]);
+  }
+
+  // Считаем цифры
+  for (let x = 0; x < size; x++) {
+    for (let y = 0; y < size; y++) {
+      if (board[x][y].mine) continue;
+
+      let cnt = 0;
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          if (dx === 0 && dy === 0) continue;
+          const nx = x + dx, ny = y + dy;
+          if (inBounds(nx, ny) && board[nx][ny].mine) cnt++;
+        }
+      }
+      board[x][y].number = cnt;
+    }
+  }
+}
+
+
+// -------------------------
+// ОТКРЫТЬ КЛЕТКУ
+// -------------------------
+function handleClick(e) {
+  if (gameOver) return;
+
+  const x = +this.dataset.x;
+  const y = +this.dataset.y;
+  const cell = board[x][y];
+
+  if (cell.revealed || cell.flagged) return;
+
+  revealCell(x, y);
+
+  // Анимация клика
+  this.style.transform = "scale(0.92)";
+  setTimeout(() => (this.style.transform = "scale(1)"), 120);
+
+  // Проверка победы
+  if (revealed === size * size - minesCount) {
+    winGame();
+  }
+}
+
+
+// -------------------------
+// ОТКРЫТИЕ
+// -------------------------
+function revealCell(x, y) {
+  const cell = board[x][y];
+  if (cell.revealed || cell.flagged) return;
+
+  const el = getCell(x, y);
+  cell.revealed = true;
+  revealed++;
+
+  el.classList.add("open");
+  sndClick.currentTime = 0;
+  sndClick.play();
+
+  // Если мина — проигрыш
+  if (cell.mine) {
+    boom(x, y);
+    return;
+  }
+
+  // Если 0 — раскрываем вокруг
+  if (cell.number === 0) {
+    el.textContent = "";
+    revealAround(x, y);
+  } else {
+    el.textContent = cell.number;
+    el.style.color = numberColor(cell.number);
+  }
+}
+
+
+// -------------------------
+// АВТО-РАСКРЫТИЕ
+// -------------------------
+function revealAround(x, y) {
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      if (dx === 0 && dy === 0) continue;
+      const nx = x + dx, ny = y + dy;
+      if (inBounds(nx, ny)) revealCell(nx, ny);
+    }
+  }
+}
+
+
+// -------------------------
+// ФЛАГ
+// -------------------------
+function toggleFlag(x, y) {
+  if (gameOver) return;
+  const cell = board[x][y];
+  const el = getCell(x, y);
+
+  if (cell.revealed) return;
+
+  cell.flagged = !cell.flagged;
+  el.classList.toggle("flag");
+
+  sndFlag.currentTime = 0;
+  sndFlag.play();
+}
+
+
+// -------------------------
+// ВЗРЫВ
+// -------------------------
+function boom(x, y) {
+  gameOver = true;
+
+  sndBoom.currentTime = 0;
+  sndBoom.play();
+
+  const el = getCell(x, y);
+  el.style.background = "#ff4f4f";
+
+  // Тряска
+  document.body.classList.add("shake");
+  setTimeout(() => document.body.classList.remove("shake"), 500);
+
+  // Показать все мины
+  minePositions.forEach(([mx, my]) => {
+    const c = getCell(mx, my);
+    c.classList.add("open");
+    c.style.background = board[mx][my].mine ? "#b12222" : "";
+    c.textContent = "💣";
+  });
+}
+
+
+// -------------------------
+// ПОБЕДА
+// -------------------------
+function winGame() {
+  gameOver = true;
+
+  sndWin.currentTime = 0;
+  sndWin.play();
+
+  setTimeout(() => {
+    alert("🎉 Победа! Ты разминировал поле.");
+  }, 150);
+}
+
+
+// -------------------------
+// ЦВЕТ ЦИФРЫ
+// -------------------------
+function numberColor(n) {
+  return ["#9ec2ff", "#90f2c5", "#ffec80", "#ffb28a",
+          "#ff8a8a", "#e6a0ff", "#b2b2b2", "#ffffff"][n-1];
+}
+
+
+// -------------------------
+// СБРОС ИГРЫ
+// -------------------------
+function resetGame() {
+  generateBoard();
+}
+
+document.getElementById("restart").onclick = resetGame;
+
+// Старт
+generateBoard();
+
+</script>
