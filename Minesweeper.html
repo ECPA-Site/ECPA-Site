@@ -94,12 +94,13 @@ p.lead{
   font-weight:600;
   cursor:pointer;
   transition:transform .12s cubic-bezier(.2,1.7,.6,1), background .2s, opacity .25s;
+  position: relative;
 }
 
 .cell:hover{background:var(--cell-hover);}
 .cell:active{transform:scale(.85);}
-.cell.open{background:var(--cell-open); cursor:default; transform:scale(1)!important; opacity:1; animation:fadeInCell .18s ease;}
-.cell.flag{color:var(--flag);}
+.cell.open{background:var(--cell-open); cursor:default; transform:scale(1)!important; opacity:1; animation:fadeInCell .25s ease; display:flex; align-items:center; justify-content:center; font-weight:700;}
+.cell.flag::after{content:"🚩"; position:absolute; font-size:18px;}
 .cell.mine{color:var(--explode);}
 .explode{animation:boom .3s ease-out;}
 
@@ -112,6 +113,16 @@ p.lead{
   40%{transform:scale(1.25); box-shadow:0 0 18px rgba(255,50,50,0.6);}
   100%{transform:scale(1); box-shadow:0 0 0 rgba(255,0,0,0);}
 }
+
+/* Цвет цифр */
+.cell.open[data-number="1"]:not(.flag){color:#0096ff;}
+.cell.open[data-number="2"]:not(.flag){color:#33ff99;}
+.cell.open[data-number="3"]:not(.flag){color:#ffcb33;}
+.cell.open[data-number="4"]:not(.flag){color:#ff5c33;}
+.cell.open[data-number="5"]:not(.flag){color:#ff33aa;}
+.cell.open[data-number="6"]:not(.flag){color:#8c33ff;}
+.cell.open[data-number="7"]:not(.flag){color:#33fff3;}
+.cell.open[data-number="8"]:not(.flag){color:#ffffff;}
 
 .bottom-bar{
   margin-top:18px;
@@ -157,12 +168,13 @@ p.lead{
 <div class="top-bar">
   <select id="difficulty" class="select">
     <option value="easy">Лёгкая (8×8, 10 мин)</option>
-    <option value="medium">Средняя (12×12, 20 мин)</option>
+    <option value="medium">Средняя (12×12, 22 мин)</option>
     <option value="hard">Сложная (16×16, 40 мин)</option>
   </select>
 </div>
 <div id="board"></div>
 <div id="message" class="msg"></div>
+<div class="msg" id="highScore"></div>
 <div class="bottom-bar">
   <div class="counter">Flags: <span id="flagCount">0</span></div>
   <button class="btn" id="restart">Restart</button>
@@ -170,56 +182,51 @@ p.lead{
 </main>
 
 <script>
-// Звуки (минимальные, встроенные)
+// Мини-звуки (встроенные)
 const sndClick = new Audio("data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA...");
 const sndFlag  = new Audio("data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA...");
 const sndBoom  = new Audio("data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA...");
 const sndWin   = new Audio("data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA...");
-
 [sndClick, sndFlag, sndBoom, sndWin].forEach(a=>a.volume=0.4);
 
-// Параметры
+// Настройки
 let SIZE=8, MINES=10;
 let board=[], minePositions=[], revealed=0, flags=0, gameOver=false;
 
-const boardEl = document.getElementById("board");
-const msgEl = document.getElementById("message");
-const flagCountEl = document.getElementById("flagCount");
-const diffEl = document.getElementById("difficulty");
+const boardEl=document.getElementById("board");
+const msgEl=document.getElementById("message");
+const flagCountEl=document.getElementById("flagCount");
+const highScoreEl=document.getElementById("highScore");
+const diffEl=document.getElementById("difficulty");
 
-const difficultyPresets={
-  easy:{size:8,mines:10},
-  medium:{size:12,mines:22},
-  hard:{size:16,mines:40}
-};
+const difficultyPresets={easy:{size:8,mines:10},medium:{size:12,mines:22},hard:{size:16,mines:40}};
 
 // Смена сложности
-diffEl.onchange = ()=>{
+diffEl.onchange=()=>{
   const v=diffEl.value;
-  SIZE=difficultyPresets[v].size;
-  MINES=difficultyPresets[v].mines;
+  SIZE=difficultyPresets[v].size; MINES=difficultyPresets[v].mines;
   resetGame();
+  updateHighScore();
 };
 
-// Инициализация
+// Создание поля
 function resetGame(){
   board=[]; minePositions=[]; revealed=0; flags=0; gameOver=false;
   flagCountEl.textContent=flags; msgEl.textContent="";
   boardEl.innerHTML="";
   boardEl.style.gridTemplateColumns=`repeat(${SIZE},1fr)`;
 
-  // Создание клеток
   for(let x=0;x<SIZE;x++){
     board[x]=[];
     for(let y=0;y<SIZE;y++){
-      board[x][y]={mine:false, revealed:false, flagged:false, number:0};
+      board[x][y]={mine:false,revealed:false,flagged:false,number:0};
       const cell=document.createElement("div");
       cell.className="cell";
       cell.dataset.x=x; cell.dataset.y=y;
 
       cell.addEventListener("click",()=>handleClick(x,y));
       cell.addEventListener("contextmenu",e=>{e.preventDefault(); toggleFlag(x,y);});
-      // Телефон: удержание
+
       let touchTimer;
       cell.addEventListener('touchstart',()=>{touchTimer=setTimeout(()=>toggleFlag(x,y),400);});
       cell.addEventListener('touchend',()=>clearTimeout(touchTimer));
@@ -228,20 +235,19 @@ function resetGame(){
     }
   }
 
-  // Ставим мины
-  const spots=[];
-  for(let x=0;x<SIZE;x++)for(let y=0;y<SIZE;y++)spots.push([x,y]);
+  // Расставляем мины
+  const spots=[]; for(let x=0;x<SIZE;x++)for(let y=0;y<SIZE;y++)spots.push([x,y]);
   for(let i=0;i<MINES;i++){
     const [x,y]=spots.splice(Math.floor(Math.random()*spots.length),1)[0];
     board[x][y].mine=true; minePositions.push([x,y]);
   }
 
-  // Счёт чисел
+  // Считаем цифры
   for(let x=0;x<SIZE;x++){
     for(let y=0;y<SIZE;y++){
       if(board[x][y].mine) continue;
       let cnt=0;
-      for(let dx=-1;dx<=1;dx++) for(let dy=-1;dy<=1;dy++){
+      for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
         if(dx===0&&dy===0) continue;
         const nx=x+dx, ny=y+dy;
         if(nx>=0&&nx<SIZE&&ny>=0&&ny<SIZE&&board[nx][ny].mine) cnt++;
@@ -249,8 +255,14 @@ function resetGame(){
       board[x][y].number=cnt;
     }
   }
+
+  updateHighScore();
 }
 
+// Получить клетку
+function getCell(x,y){return boardEl.children[x*SIZE+y];}
+
+// Клик
 function handleClick(x,y){
   if(gameOver) return;
   const cell=board[x][y];
@@ -262,37 +274,40 @@ function handleClick(x,y){
   if(revealed===SIZE*SIZE-MINES) winGame();
 }
 
+// Раскрытие
 function revealCell(x,y){
   const cell=board[x][y];
   if(cell.revealed||cell.flagged) return;
   cell.revealed=true; revealed++;
   const el=getCell(x,y);
   el.classList.add("open");
+  el.dataset.number = cell.number || "";
   sndClick.currentTime=0; sndClick.play();
+
   if(cell.mine){boom(x,y); return;}
-  if(cell.number===0){el.textContent=""; revealAround(x,y);} else {el.textContent=cell.number;}
+  if(cell.number>0){el.textContent=cell.number;}else{el.textContent=""; revealAround(x,y);}
 }
 
+// Раскрытие вокруг
 function revealAround(x,y){
-  for(let dx=-1;dx<=1;dx++) for(let dy=-1;dy<=1;dy++){
+  for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
     if(dx===0&&dy===0) continue;
     const nx=x+dx, ny=y+dy;
     if(nx>=0&&nx<SIZE&&ny>=0&&ny<SIZE) revealCell(nx,ny);
   }
 }
 
+// Флаг
 function toggleFlag(x,y){
   if(gameOver) return;
-  const cell=board[x][y];
-  const el=getCell(x,y);
+  const cell=board[x][y]; const el=getCell(x,y);
   if(cell.revealed) return;
-  cell.flagged=!cell.flagged;
-  el.classList.toggle("flag");
+  cell.flagged=!cell.flagged; el.classList.toggle("flag");
   sndFlag.currentTime=0; sndFlag.play();
-  flags+=cell.flagged?1:-1;
-  flagCountEl.textContent=flags;
+  flags+=cell.flagged?1:-1; flagCountEl.textContent=flags;
 }
 
+// Взрыв
 function boom(x,y){
   gameOver=true;
   sndBoom.currentTime=0; sndBoom.play();
@@ -302,17 +317,25 @@ function boom(x,y){
   });
 }
 
+// Победа
 function winGame(){
   gameOver=true;
   sndWin.currentTime=0; sndWin.play();
-  setTimeout(()=>alert("🎉 Победа!"),150);
+  const key="minesweeper_wins_"+diffEl.value;
+  let wins=parseInt(localStorage.getItem(key))||0; wins++; localStorage.setItem(key,wins);
+  updateHighScore();
+  setTimeout(()=>alert(`🎉 Победа! Всего побед на ${diffEl.value}: ${wins}`),150);
 }
 
-function getCell(x,y){return boardEl.children[x*SIZE+y];}
+// High Score
+function updateHighScore(){
+  const key="minesweeper_wins_"+diffEl.value;
+  const wins=parseInt(localStorage.getItem(key))||0;
+  highScoreEl.textContent=`🏆 Победы на ${diffEl.value}: ${wins}`;
+}
 
+// Старт и рестарт
 document.getElementById("restart").onclick=resetGame;
-
-// Старт игры
 resetGame();
 </script>
 </body>
