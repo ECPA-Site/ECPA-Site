@@ -96,7 +96,7 @@
 
   <body>
     <h1>Admin Panel</h1>
-    <div class="h2" id="userinfo">
+    <div class="h2" id="userName">
         <p>Loading...</p>
     </div>
 
@@ -160,7 +160,7 @@ fetch("users.txt")
 
             if (!userInfo) {
                 document.getElementById("userinfo").innerHTML = "Информация о пользователе не найдена";
-                document.getElementById("adminName").innerHTML = "Информация о пользователе не найдена";
+                document.getElementById("userName").innerHTML = "Информация о пользователе не найдена";
                 return;
             }
 
