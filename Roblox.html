@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Mini Roblox + Character Select</title>
+<style>
+    body { margin: 0; background: #222; color: white; font-family: Arial; }
+    canvas { display: none; background: #444; margin: 0 auto; display: block; }
+    #menu {
+        text-align: center;
+        margin-top: 80px;
+    }
+    .char-btn {
+        padding: 15px 25px;
+        margin: 10px;
+        font-size: 20px;
+        cursor: pointer;
+        border: none;
+        border-radius: 10px;
+        color: white;
+    }
+</style>
+</head>
+<body>
+
+<div id="menu">
+    <h1>Выбери персонажа</h1>
+    <button class="char-btn" style="background:#ff0033" onclick="startGame('RedShadow')">RedShadow</button>
+    <button class="char-btn" style="background:#00c8ff" onclick="startGame('MrFlicer')">MrFlicer</button>
+    <button class="char-btn" style="background:#00ff44" onclick="startGame('Joper546')">Joper546</button>
+    <button class="char-btn" style="background:#ff8800" onclick="startGame('Dobrikotikleast')">Dobrikotikleast</button>
+</div>
+
+<canvas id="game" width="900" height="500"></canvas>
+
+<script>
+let canvas = document.getElementById("game");
+let ctx = canvas.getContext("2d");
+let keys = {};
+
+let selectedCharacter = null;
+let playerColor = "white";
+
+// персонажи и их цвета
+const characterColors = {
+    "RedShadow": "#ff0033",
+    "MrFlicer": "#00c8ff",
+    "Joper546": "#00ff44",
+    "Dobrikotikleast": "#ff8800"
+};
+
+// игрок
+let player = {
+    x: 100,
+    y: 400,
+    w: 40,
+    h: 40,
+    dy: 0,
+    speed: 5,
+    jumpPower: -15,
+    onGround: true
+};
+
+// враги
+let enemies = [
+    { x: 600, y: 410, w: 40, h: 40, dir: 1 },
+    { x: 300, y: 410, w: 40, h: 40, dir: -1 }
+];
+
+// пули
+let bullets = [];
+
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+function shoot() {
+    bullets.push({
+        x: player.x + player.w,
+        y: player.y + player.h / 2,
+        speed: 10
+    });
+}
+
+// старт игры
+function startGame(name) {
+    selectedCharacter = name;
+    playerColor = characterColors[name];
+
+    document.getElementById("menu").style.display = "none";
+    canvas.style.display = "block";
+
+    gameLoop();
+}
+
+// игровой цикл
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // управление
+    if (keys["a"]) player.x -= player.speed;
+    if (keys["d"]) player.x += player.speed;
+
+    if (keys[" "] && player.onGround) {
+        player.dy = player.jumpPower;
+        player.onGround = false;
+    }
+
+    if (keys["k"]) shoot();
+
+    player.dy += 0.8;
+    player.y += player.dy;
+
+    if (player.y + player.h >= 440) {
+        player.y = 440 - player.h;
+        player.dy = 0;
+        player.onGround = true;
+    }
+
+    bullets.forEach((b, i) => {
+        b.x += b.speed;
+        if (b.x > canvas.width) bullets.splice(i, 1);
+    });
+
+    enemies.forEach(e => {
+        e.x += e.dir * 2;
+        if (e.x < 100 || e.x > 800) e.dir *= -1;
+    });
+
+    // рисуем игрока
+    ctx.fillStyle = playerColor;
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+
+    // враги
+    ctx.fillStyle = "red";
+    enemies.forEach(e => {
+        ctx.fillRect(e.x, e.y, e.w, e.h);
+    });
+
+    // пули
+    ctx.fillStyle = "yellow";
+    bullets.forEach(b => {
+        ctx.fillRect(b.x, b.y, 10, 5);
+    });
+
+    // имя персонажа
+    ctx.fillStyle = "white";
+    ctx.font = "20px Arial";
+    ctx.fillText(selectedCharacter, player.x - 10, player.y - 10);
+
+    requestAnimationFrame(gameLoop);
+}
+</script>
+
+</body>
+</html
