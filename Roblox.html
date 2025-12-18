@@ -1,155 +1,408 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Mini Roblox + Character Select</title>
+<meta charset="UTF-8" />
+<title>Roblox‑like Game</title>
 <style>
-    body { margin: 0; background: #222; color: white; font-family: Arial; }
-    canvas { display: none; background: #444; margin: 0 auto; display: block; }
-    #menu {
-        text-align: center;
-        margin-top: 80px;
+    body {
+        margin: 0;
+        overflow: hidden;
+        background: #87CEEB;
+        font-family: Arial;
+        user-select: none;
     }
-    .char-btn {
-        padding: 15px 25px;
-        margin: 10px;
-        font-size: 20px;
-        cursor: pointer;
-        border: none;
-        border-radius: 10px;
+
+    #ui {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 50;
         color: white;
+        font-size: 20px;
+        text-shadow: 2px 2px 4px black;
+    }
+
+    #coins {
+        margin-bottom: 10px;
+    }
+
+    .mobile-btn {
+        position: absolute;
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.4);
+        border: 2px solid white;
+        z-index: 30;
+        backdrop-filter: blur(4px);
+        text-align: center;
+        line-height: 70px;
+        font-size: 22px;
+        color: black;
+    }
+
+    #btnLeft { bottom: 30px; left: 30px; }
+    #btnRight { bottom: 30px; left: 120px; }
+    #btnJump { bottom: 30px; right: 120px; }
+    #btnAttack { bottom: 30px; right: 30px; }
+
+    /* Меню выбора слотов */
+    #saveMenu {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.75);
+        top: 0;
+        left: 0;
+        z-index: 200;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        font-size: 28px;
+    }
+    #saveMenu button {
+        padding: 10px 30px;
+        margin: 10px;
+        font-size: 22px;
+        cursor: pointer;
+    }
+
+    #shop {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        padding: 15px;
+        background: rgba(0,0,0,0.5);
+        color: white;
+        z-index: 100;
+        border-radius: 10px;
+        display: none;
+    }
+    #shop h2 { margin-top: 0; }
+
+    #charMenu {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.85);
+        top: 0;
+        left: 0;
+        z-index: 180;
+        color: white;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+    #charMenu button {
+        padding: 10px 25px;
+        margin: 10px;
+        font-size: 22px;
     }
 </style>
 </head>
+
 <body>
 
-<div id="menu">
-    <h1>Выбери персонажа</h1>
-    <button class="char-btn" style="background:#ff0033" onclick="startGame('RedShadow')">RedShadow</button>
-    <button class="char-btn" style="background:#00c8ff" onclick="startGame('MrFlicer')">MrFlicer</button>
-    <button class="char-btn" style="background:#00ff44" onclick="startGame('Joper546')">Joper546</button>
-    <button class="char-btn" style="background:#ff8800" onclick="startGame('Dobrikotikleast')">Dobrikotikleast</button>
+<div id="ui">
+    <div id="coins">Монеты: 0</div>
+    <div id="weapon">Меч: нет</div>
 </div>
 
-<canvas id="game" width="900" height="500"></canvas>
+<!-- Кнопки для телефона -->
+<div id="btnLeft" class="mobile-btn">◀</div>
+<div id="btnRight" class="mobile-btn">▶</div>
+<div id="btnJump" class="mobile-btn">⬆</div>
+<div id="btnAttack" class="mobile-btn">⚔</div>
+
+<!-- Меню сохранений -->
+<div id="saveMenu">
+    <div>Выберите слот сохранения:</div>
+    <br>
+    <button onclick="loadSlot(1)">Слот 1 — <span id="slot1name">Пусто</span></button>
+    <button onclick="loadSlot(2)">Слот 2 — <span id="slot2name">Пусто</span></button>
+    <button onclick="loadSlot(3)">Слот 3 — <span id="slot3name">Пусто</span></button>
+    <button onclick="loadSlot(4)">Слот 4 — <span id="slot4name">Пусто</span></button>
+</div>
+
+<!-- Меню выбора персонажа -->
+<div id="charMenu">
+    <h1>Выбери персонажа</h1>
+    <button onclick="selectCharacter('RedShadow')">RedShadow</button>
+    <button onclick="selectCharacter('MrFlicer')">MrFlicer</button>
+    <button onclick="selectCharacter('Joper546')">Joper546</button>
+    <button onclick="selectCharacter('Dobrikotikleast')">Dobrikotikleast</button>
+</div>
+
+<!-- Магазин -->
+<div id="shop">
+    <h2>Магазин</h2>
+    <button onclick="buySword('Starter Sword',5,5)">Starter Sword — 5 монет</button><br>
+    <button onclick="buySword('Bronze Sword',12,12)">Bronze Sword — 12 монет</button><br>
+    <button onclick="buySword('Silver Sword',20,20)">Silver Sword — 20 монет</button><br>
+    <button onclick="buySword('Golden Sword',35,35)">Golden Sword — 35 монет</button><br>
+</div>
 
 <script>
-let canvas = document.getElementById("game");
-let ctx = canvas.getContext("2d");
-let keys = {};
+//////////////////////////////////////////////////////////////////
+// ОСНОВНЫЕ ПЕРЕМЕННЫЕ
+//////////////////////////////////////////////////////////////////
 
+let coins = 0;
+let currentSword = null;
+let swordDamage = 1;
 let selectedCharacter = null;
-let playerColor = "white";
 
-// персонажи и их цвета
-const characterColors = {
-    "RedShadow": "#ff0033",
-    "MrFlicer": "#00c8ff",
-    "Joper546": "#00ff44",
-    "Dobrikotikleast": "#ff8800"
-};
+let currentSlot = null;
 
-// игрок
-let player = {
-    x: 100,
-    y: 400,
-    w: 40,
-    h: 40,
-    dy: 0,
-    speed: 5,
-    jumpPower: -15,
-    onGround: true
-};
+//////////////////////////////////////////////////////////////////
+// СОХРАНЕНИЯ
+//////////////////////////////////////////////////////////////////
 
-// враги
-let enemies = [
-    { x: 600, y: 410, w: 40, h: 40, dir: 1 },
-    { x: 300, y: 410, w: 40, h: 40, dir: -1 }
-];
-
-// пули
-let bullets = [];
-
-document.addEventListener("keydown", e => keys[e.key] = true);
-document.addEventListener("keyup", e => keys[e.key] = false);
-
-function shoot() {
-    bullets.push({
-        x: player.x + player.w,
-        y: player.y + player.h / 2,
-        speed: 10
-    });
+function updateSlotNames() {
+    for (let i=1; i<=4; i++) {
+        let data = localStorage.getItem("slot" + i);
+        let obj = data ? JSON.parse(data) : null;
+        document.getElementById("slot"+i+"name").innerText = obj ? obj.character : "Пусто";
+    }
 }
 
-// старт игры
-function startGame(name) {
-    selectedCharacter = name;
-    playerColor = characterColors[name];
+updateSlotNames();
 
-    document.getElementById("menu").style.display = "none";
-    canvas.style.display = "block";
+function loadSlot(n) {
+    currentSlot = n;
+    let data = localStorage.getItem("slot" + n);
 
-    gameLoop();
-}
+    if (!data) {
+        // Новый слот – показываем меню выбора персонажа
+        document.getElementById("charMenu").style.display = "flex";
+    } else {
+        let obj = JSON.parse(data);
+        coins = obj.coins;
+        currentSword = obj.sword;
+        swordDamage = obj.damage;
+        selectedCharacter = obj.character;
 
-// игровой цикл
-function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+        document.getElementById("coins").innerText = "Монеты: " + coins;
+        document.getElementById("weapon").innerText = "Меч: " + (currentSword ? currentSword : "нет");
 
-    // управление
-    if (keys["a"]) player.x -= player.speed;
-    if (keys["d"]) player.x += player.speed;
-
-    if (keys[" "] && player.onGround) {
-        player.dy = player.jumpPower;
-        player.onGround = false;
+        startGame();
     }
 
-    if (keys["k"]) shoot();
+    document.getElementById("saveMenu").style.display = "none";
+}
 
-    player.dy += 0.8;
-    player.y += player.dy;
+function saveGame() {
+    if (!currentSlot) return;
 
-    if (player.y + player.h >= 440) {
-        player.y = 440 - player.h;
-        player.dy = 0;
+    let obj = {
+        coins: coins,
+        sword: currentSword,
+        damage: swordDamage,
+        character: selectedCharacter
+    };
+
+    localStorage.setItem("slot" + currentSlot, JSON.stringify(obj));
+    updateSlotNames();
+}
+
+//////////////////////////////////////////////////////////////////
+// ВЫБОР ПЕРСОНАЖА
+//////////////////////////////////////////////////////////////////
+
+function selectCharacter(name) {
+    selectedCharacter = name;
+    saveGame();
+    document.getElementById("charMenu").style.display = "none";
+    startGame();
+}
+
+//////////////////////////////////////////////////////////////////
+// НАЧАЛО ИГРЫ
+//////////////////////////////////////////////////////////////////
+
+let canvas, ctx;
+let player = { x: 200, y: 200, vx:0, vy:0, onGround:false };
+let enemies = [];
+let boss = null;
+
+function startGame() {
+    canvas = document.createElement("canvas");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    document.body.appendChild(canvas);
+
+    ctx = canvas.getContext("2d");
+
+    spawnEnemies();
+    spawnBoss();
+
+    loop();
+}
+
+//////////////////////////////////////////////////////////////////
+// ВРАГИ И БОСС
+//////////////////////////////////////////////////////////////////
+
+function spawnEnemies() {
+    for (let i=0;i<5;i++){
+        enemies.push({
+            x: Math.random()*2000-1000,
+            y: 400,
+            hp: 20
+        });
+    }
+}
+
+function spawnBoss() {
+    boss = {
+        x: 500,
+        y: 400,
+        hp: 200,
+        dead: false
+    };
+}
+
+//////////////////////////////////////////////////////////////////
+// МАГАЗИН
+//////////////////////////////////////////////////////////////////
+
+function buySword(name, cost, dmg) {
+    if (coins < cost) return;
+
+    coins -= cost;
+    currentSword = name;
+    swordDamage = dmg;
+
+    document.getElementById("coins").innerText = "Монеты: " + coins;
+    document.getElementById("weapon").innerText = "Меч: " + currentSword;
+
+    saveGame();
+}
+
+//////////////////////////////////////////////////////////////////
+// ИГРОВАЯ ЛОГИКА
+//////////////////////////////////////////////////////////////////
+
+let leftPressed=false, rightPressed=false;
+let attackPressed=false;
+
+document.addEventListener("keydown", e=>{
+    if(e.code==="ArrowLeft") leftPressed=true;
+    if(e.code==="ArrowRight") rightPressed=true;
+    if(e.code==="Space") jump();
+    if(e.code==="KeyF") attack();
+});
+document.addEventListener("keyup", e=>{
+    if(e.code==="ArrowLeft") leftPressed=false;
+    if(e.code==="ArrowRight") rightPressed=false;
+});
+
+document.getElementById("btnLeft").onmousedown=()=>leftPressed=true;
+document.getElementById("btnLeft").onmouseup=()=>leftPressed=false;
+
+document.getElementById("btnRight").onmousedown=()=>rightPressed=true;
+document.getElementById("btnRight").onmouseup=()=>rightPressed=false;
+
+document.getElementById("btnJump").onclick=()=>jump();
+document.getElementById("btnAttack").onclick=()=>attack();
+
+function jump() {
+    if(player.onGround){
+        player.vy = -15;
+        player.onGround=false;
+    }
+}
+
+function attack() {
+    attackPressed = true;
+
+    // Проверяем попадание по врагам
+    enemies.forEach(e=>{
+        if(Math.abs(e.x - player.x) < 60){
+            e.hp -= swordDamage;
+            if(e.hp <=0){
+                coins += 3;
+                e.x = 999999; // удаляем
+                document.getElementById("coins").innerText = "Монеты: " + coins;
+                saveGame();
+            }
+        }
+    });
+
+    // Проверяем попадание по боссу
+    if(boss && !boss.dead){
+        if(Math.abs(boss.x - player.x) < 80){
+            boss.hp -= swordDamage;
+            if(boss.hp <=0){
+                boss.dead = true;
+                coins += 50;
+
+                // выпадение супер‑меча
+                currentSword = "Musk Sword";
+                swordDamage = 50;
+
+                document.getElementById("coins").innerText = "Монеты: " + coins;
+                document.getElementById("weapon").innerText = "Меч: " + currentSword;
+
+                saveGame();
+            }
+        }
+    }
+
+    setTimeout(()=>attackPressed=false, 200);
+}
+
+//////////////////////////////////////////////////////////////////
+// ОТРИСОВКА
+//////////////////////////////////////////////////////////////////
+
+function loop() {
+    requestAnimationFrame(loop);
+
+    // Физика
+    player.vy += 0.8;
+    player.y += player.vy;
+
+    if(player.y > 400){
+        player.y = 400;
+        player.vy = 0;
         player.onGround = true;
     }
 
-    bullets.forEach((b, i) => {
-        b.x += b.speed;
-        if (b.x > canvas.width) bullets.splice(i, 1);
+    if(leftPressed) player.x -= 5;
+    if(rightPressed) player.x += 5;
+
+    // Очистка
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // Камера
+    let camX = player.x - canvas.width/2;
+
+    // Земля
+    ctx.fillStyle="#228B22";
+    ctx.fillRect(0 - camX, 450, 5000, 1000);
+
+    // Персонаж
+    ctx.fillStyle="red";
+    ctx.fillRect(player.x - camX, player.y - 50, 40, 50);
+
+    // Враги
+    ctx.fillStyle="black";
+    enemies.forEach(e=>{
+        if(e.hp > 0) ctx.fillRect(e.x - camX, e.y - 40, 40, 40);
     });
 
-    enemies.forEach(e => {
-        e.x += e.dir * 2;
-        if (e.x < 100 || e.x > 800) e.dir *= -1;
-    });
+    // Босс
+    if(boss && !boss.dead){
+        ctx.fillStyle="purple";
+        ctx.fillRect(boss.x - camX, boss.y - 60, 80, 60);
+    }
 
-    // рисуем игрока
-    ctx.fillStyle = playerColor;
-    ctx.fillRect(player.x, player.y, player.w, player.h);
-
-    // враги
-    ctx.fillStyle = "red";
-    enemies.forEach(e => {
-        ctx.fillRect(e.x, e.y, e.w, e.h);
-    });
-
-    // пули
-    ctx.fillStyle = "yellow";
-    bullets.forEach(b => {
-        ctx.fillRect(b.x, b.y, 10, 5);
-    });
-
-    // имя персонажа
-    ctx.fillStyle = "white";
-    ctx.font = "20px Arial";
-    ctx.fillText(selectedCharacter, player.x - 10, player.y - 10);
-
-    requestAnimationFrame(gameLoop);
 }
 </script>
 
 </body>
-</html
+</html>
