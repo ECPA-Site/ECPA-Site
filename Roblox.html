@@ -2,105 +2,194 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Mega 3D Roblox Style</title>
+<title>Mega Roblox 3D</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
 <style>
-body { margin:0; overflow:hidden; background:#000; }
-#ui {
-  position:fixed; bottom:20px; left:20px; z-index:10;
-}
-.btn {
-  width:70px; height:70px;
+body { margin:0; overflow:hidden; background:#000; touch-action:none; }
+
+/* Джойстик */
+#joystick {
+  position:fixed;
+  left:20px;
+  bottom:20px;
+  width:140px;
+  height:140px;
   border-radius:50%;
-  background:rgba(255,255,255,0.2);
-  color:white;
-  font-size:24px;
+  background:rgba(255,255,255,0.15);
   border:2px solid white;
 }
-#jump { position:fixed; bottom:20px; right:20px; }
+#stick {
+  position:absolute;
+  left:45px;
+  top:45px;
+  width:50px;
+  height:50px;
+  border-radius:50%;
+  background:white;
+}
+
+/* Прыжок */
+#jump {
+  position:fixed;
+  right:20px;
+  bottom:30px;
+  width:80px;
+  height:80px;
+  border-radius:50%;
+  font-size:30px;
+  border:2px solid white;
+  background:rgba(255,255,255,0.2);
+  color:white;
+}
 </style>
 </head>
+
 <body>
 
-<div id="ui">
-  <button class="btn" id="left">◀</button>
-  <button class="btn" id="right">▶</button>
+<div id="joystick">
+  <div id="stick"></div>
 </div>
-<button class="btn" id="jump">⬆</button>
+<button id="jump">⬆</button>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <script>
-let scene = new THREE.Scene();
+// === СЦЕНА ===
+const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
-let camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
-let renderer = new THREE.WebGLRenderer({antialias:true});
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Свет
-let light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(5,10,5);
-scene.add(light);
+// === СВЕТ ===
 scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+const sun = new THREE.DirectionalLight(0xffffff, 1);
+sun.position.set(10,20,10);
+scene.add(sun);
 
-// Земля
-let ground = new THREE.Mesh(
-  new THREE.BoxGeometry(100,1,100),
-  new THREE.MeshStandardMaterial({color:0x228B22})
+// === ЗЕМЛЯ ===
+const ground = new THREE.Mesh(
+  new THREE.BoxGeometry(200,1,200),
+  new THREE.MeshStandardMaterial({color:0x2ecc71})
 );
 ground.position.y = -0.5;
 scene.add(ground);
 
-// Игрок
-let player = new THREE.Mesh(
+// === ИГРОК ===
+const player = new THREE.Mesh(
   new THREE.BoxGeometry(1,2,1),
-  new THREE.MeshStandardMaterial({color:0xff0000})
+  new THREE.MeshStandardMaterial({color:0xff4444})
 );
 player.position.y = 1;
 scene.add(player);
 
-// Физика
-let velocityY = 0;
+// === ФИЗИКА ===
+let velY = 0;
 let onGround = true;
 
-// Управление
-let keys = {};
-document.addEventListener("keydown", e => keys[e.key] = true);
-document.addEventListener("keyup", e => keys[e.key] = false);
+// === КАМЕРА ===
+let camAngle = 0;
+let camDist = 8;
 
-// Кнопки (мобилка)
-left.onclick = ()=> keys["a"]=true;
-right.onclick = ()=> keys["d"]=true;
-left.onmouseleave = ()=> keys["a"]=false;
-right.onmouseleave = ()=> keys["d"]=false;
-jump.onclick = ()=> {
-  if(onGround){ velocityY = 0.35; onGround=false; }
+// === ПК УПРАВЛЕНИЕ ===
+const keys = {};
+addEventListener("keydown", e=>keys[e.key]=true);
+addEventListener("keyup", e=>keys[e.key]=false);
+
+// === ПОВОРОТ КАМЕРЫ (МЫШЬ + ПАЛЕЦ) ===
+let dragging = false;
+let lastX = 0;
+
+addEventListener("mousedown", e=>{
+  dragging = true;
+  lastX = e.clientX;
+});
+addEventListener("mouseup", ()=>dragging=false);
+addEventListener("mousemove", e=>{
+  if(dragging){
+    camAngle -= (e.clientX - lastX) * 0.005;
+    lastX = e.clientX;
+  }
+});
+
+addEventListener("touchstart", e=>{
+  if(e.touches.length===1){
+    dragging = true;
+    lastX = e.touches[0].clientX;
+  }
+});
+addEventListener("touchend", ()=>dragging=false);
+addEventListener("touchmove", e=>{
+  if(dragging){
+    camAngle -= (e.touches[0].clientX - lastX) * 0.005;
+    lastX = e.touches[0].clientX;
+  }
+});
+
+// === ДЖОЙСТИК ===
+const joy = document.getElementById("joystick");
+const stick = document.getElementById("stick");
+let joyX = 0, joyY = 0;
+
+joy.addEventListener("touchstart", e=>moveJoy(e));
+joy.addEventListener("touchmove", e=>moveJoy(e));
+joy.addEventListener("touchend", ()=>{
+  joyX = joyY = 0;
+  stick.style.left = "45px";
+  stick.style.top = "45px";
+});
+
+function moveJoy(e){
+  const rect = joy.getBoundingClientRect();
+  const x = e.touches[0].clientX - rect.left - 70;
+  const y = e.touches[0].clientY - rect.top - 70;
+  const d = Math.min(40, Math.hypot(x,y));
+  const a = Math.atan2(y,x);
+  joyX = Math.cos(a)*(d/40);
+  joyY = Math.sin(a)*(d/40);
+  stick.style.left = 45 + Math.cos(a)*d + "px";
+  stick.style.top  = 45 + Math.sin(a)*d + "px";
+}
+
+// === ПРЫЖОК ===
+jump.onclick = ()=>{
+  if(onGround){
+    velY = 0.35;
+    onGround = false;
+  }
 };
 
+// === ОБНОВЛЕНИЕ ===
 function update(){
-  if(keys["a"]) player.position.x -= 0.1;
-  if(keys["d"]) player.position.x += 0.1;
-  if(keys["w"]) player.position.z -= 0.1;
-  if(keys["s"]) player.position.z += 0.1;
+  let speed = 0.15;
 
-  velocityY -= 0.02;
-  player.position.y += velocityY;
+  // ПК
+  if(keys["w"]) player.position.z -= speed;
+  if(keys["s"]) player.position.z += speed;
+  if(keys["a"]) player.position.x -= speed;
+  if(keys["d"]) player.position.x += speed;
 
+  // Джойстик
+  player.position.x += joyX * speed * 1.5;
+  player.position.z += joyY * speed * 1.5;
+
+  // Гравитация
+  velY -= 0.02;
+  player.position.y += velY;
   if(player.position.y <= 1){
     player.position.y = 1;
-    velocityY = 0;
+    velY = 0;
     onGround = true;
   }
 
   // Камера Roblox‑style
-  camera.position.lerp(
-    new THREE.Vector3(
-      player.position.x,
-      player.position.y + 4,
-      player.position.z + 8
-    ),
-    0.1
+  camera.position.set(
+    player.position.x + Math.sin(camAngle)*camDist,
+    player.position.y + 4,
+    player.position.z + Math.cos(camAngle)*camDist
   );
   camera.lookAt(player.position);
 }
@@ -112,7 +201,7 @@ function animate(){
 }
 animate();
 
-window.onresize = ()=>{
+onresize = ()=>{
   camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
@@ -121,4 +210,3 @@ window.onresize = ()=>{
 
 </body>
 </html>
-
