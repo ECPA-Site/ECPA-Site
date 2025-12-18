@@ -1,167 +1,124 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Roblox‑like Game</title>
+<title>Mega 3D Roblox Style</title>
 <style>
-body { margin:0; overflow:hidden; background:#87CEEB; font-family:Arial; }
-#ui { position:absolute; top:10px; left:10px; z-index:50; color:white; text-shadow:2px 2px 4px black; }
-.mobile-btn {
-    position:absolute; width:70px; height:70px; border-radius:50%;
-    background:rgba(255,255,255,0.4); border:2px solid white;
-    text-align:center; line-height:70px; font-size:22px;
+body { margin:0; overflow:hidden; background:#000; }
+#ui {
+  position:fixed; bottom:20px; left:20px; z-index:10;
 }
-#btnLeft { bottom:30px; left:30px; }
-#btnRight { bottom:30px; left:120px; }
-#btnJump { bottom:30px; right:120px; }
-#btnAttack { bottom:30px; right:30px; }
+.btn {
+  width:70px; height:70px;
+  border-radius:50%;
+  background:rgba(255,255,255,0.2);
+  color:white;
+  font-size:24px;
+  border:2px solid white;
+}
+#jump { position:fixed; bottom:20px; right:20px; }
 </style>
 </head>
-
 <body>
 
 <div id="ui">
-    <div id="coins">Монеты: 0</div>
-    <div id="weapon">Меч: нет</div>
+  <button class="btn" id="left">◀</button>
+  <button class="btn" id="right">▶</button>
 </div>
+<button class="btn" id="jump">⬆</button>
 
-<div id="btnLeft" class="mobile-btn">◀</div>
-<div id="btnRight" class="mobile-btn">▶</div>
-<div id="btnJump" class="mobile-btn">⬆</div>
-<div id="btnAttack" class="mobile-btn">⚔</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <script>
-///////////////////// ПЕРЕМЕННЫЕ /////////////////////
-let coins = 0;
-let swordDamage = 5;
+let scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
 
-let canvas = document.createElement("canvas");
-canvas.width = innerWidth;
-canvas.height = innerHeight;
-document.body.appendChild(canvas);
-let ctx = canvas.getContext("2d");
+let camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+let renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
 
-let player = { x:200, y:400, vx:0, vy:0, onGround:true };
-let enemies = [{x:600,y:400,hp:20},{x:900,y:400,hp:20}];
-let boss = { x:1300, y:380, hp:150, dead:false };
+// Свет
+let light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(5,10,5);
+scene.add(light);
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
 
-let leftPressed=false, rightPressed=false;
+// Земля
+let ground = new THREE.Mesh(
+  new THREE.BoxGeometry(100,1,100),
+  new THREE.MeshStandardMaterial({color:0x228B22})
+);
+ground.position.y = -0.5;
+scene.add(ground);
 
-///////////////////// УПРАВЛЕНИЕ /////////////////////
+// Игрок
+let player = new THREE.Mesh(
+  new THREE.BoxGeometry(1,2,1),
+  new THREE.MeshStandardMaterial({color:0xff0000})
+);
+player.position.y = 1;
+scene.add(player);
 
-// Универсальная функция (ПК + телефон)
-function bindButton(id, onPress, onRelease) {
-    const btn = document.getElementById(id);
+// Физика
+let velocityY = 0;
+let onGround = true;
 
-    btn.addEventListener("mousedown", onPress);
-    btn.addEventListener("mouseup", onRelease);
-    btn.addEventListener("mouseleave", onRelease);
+// Управление
+let keys = {};
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
 
-    btn.addEventListener("touchstart", e=>{
-        e.preventDefault();
-        onPress();
-    });
-    btn.addEventListener("touchend", e=>{
-        e.preventDefault();
-        onRelease();
-    });
+// Кнопки (мобилка)
+left.onclick = ()=> keys["a"]=true;
+right.onclick = ()=> keys["d"]=true;
+left.onmouseleave = ()=> keys["a"]=false;
+right.onmouseleave = ()=> keys["d"]=false;
+jump.onclick = ()=> {
+  if(onGround){ velocityY = 0.35; onGround=false; }
+};
+
+function update(){
+  if(keys["a"]) player.position.x -= 0.1;
+  if(keys["d"]) player.position.x += 0.1;
+  if(keys["w"]) player.position.z -= 0.1;
+  if(keys["s"]) player.position.z += 0.1;
+
+  velocityY -= 0.02;
+  player.position.y += velocityY;
+
+  if(player.position.y <= 1){
+    player.position.y = 1;
+    velocityY = 0;
+    onGround = true;
+  }
+
+  // Камера Roblox‑style
+  camera.position.lerp(
+    new THREE.Vector3(
+      player.position.x,
+      player.position.y + 4,
+      player.position.z + 8
+    ),
+    0.1
+  );
+  camera.lookAt(player.position);
 }
 
-// Влево / вправо
-bindButton("btnLeft", ()=>leftPressed=true, ()=>leftPressed=false);
-bindButton("btnRight", ()=>rightPressed=true, ()=>rightPressed=false);
-
-// Прыжок
-document.getElementById("btnJump").addEventListener("touchstart", e=>{
-    e.preventDefault(); jump();
-});
-document.getElementById("btnJump").addEventListener("mousedown", jump);
-
-// Атака
-document.getElementById("btnAttack").addEventListener("touchstart", e=>{
-    e.preventDefault(); attack();
-});
-document.getElementById("btnAttack").addEventListener("mousedown", attack);
-
-// Клавиатура
-document.addEventListener("keydown", e=>{
-    if(e.code==="ArrowLeft") leftPressed=true;
-    if(e.code==="ArrowRight") rightPressed=true;
-    if(e.code==="Space") jump();
-    if(e.code==="KeyF") attack();
-});
-document.addEventListener("keyup", e=>{
-    if(e.code==="ArrowLeft") leftPressed=false;
-    if(e.code==="ArrowRight") rightPressed=false;
-});
-
-///////////////////// ЛОГИКА /////////////////////
-function jump(){
-    if(player.onGround){
-        player.vy = -15;
-        player.onGround=false;
-    }
+function animate(){
+  requestAnimationFrame(animate);
+  update();
+  renderer.render(scene, camera);
 }
+animate();
 
-function attack(){
-    enemies.forEach(e=>{
-        if(Math.abs(e.x-player.x)<60 && e.hp>0){
-            e.hp-=swordDamage;
-            if(e.hp<=0){ coins+=3; }
-        }
-    });
-
-    if(!boss.dead && Math.abs(boss.x-player.x)<90){
-        boss.hp-=swordDamage;
-        if(boss.hp<=0){
-            boss.dead=true;
-            coins+=50;
-            swordDamage=40;
-            document.getElementById("weapon").innerText="Меч: Musk Sword";
-        }
-    }
-
-    document.getElementById("coins").innerText="Монеты: "+coins;
-}
-
-///////////////////// ЦИКЛ /////////////////////
-function loop(){
-    requestAnimationFrame(loop);
-
-    player.vy+=0.8;
-    player.y+=player.vy;
-    if(player.y>=400){
-        player.y=400; player.vy=0; player.onGround=true;
-    }
-
-    if(leftPressed) player.x-=6;
-    if(rightPressed) player.x+=6;
-
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    let cam = player.x-canvas.width/2;
-
-    // земля
-    ctx.fillStyle="#228B22";
-    ctx.fillRect(-cam,450,5000,300);
-
-    // игрок
-    ctx.fillStyle="red";
-    ctx.fillRect(player.x-cam,player.y-50,40,50);
-
-    // враги
-    ctx.fillStyle="black";
-    enemies.forEach(e=>{
-        if(e.hp>0) ctx.fillRect(e.x-cam,e.y-40,40,40);
-    });
-
-    // босс
-    if(!boss.dead){
-        ctx.fillStyle="purple";
-        ctx.fillRect(boss.x-cam,boss.y-60,80,60);
-    }
-}
-
-loop();
+window.onresize = ()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+};
 </script>
+
 </body>
 </html>
+
