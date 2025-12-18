@@ -29,28 +29,39 @@ body { margin:0; overflow:hidden; background:#000; touch-action:none; }
   background:white;
 }
 
-/* Прыжок */
-#jump {
+/* Кнопки */
+.btn {
   position:fixed;
   right:20px;
-  bottom:30px;
   width:80px;
   height:80px;
   border-radius:50%;
-  font-size:30px;
+  font-size:26px;
   border:2px solid white;
   background:rgba(255,255,255,0.2);
   color:white;
+}
+#jump { bottom:120px; }
+#attack { bottom:30px; }
+
+/* ХП */
+#ui {
+  position:fixed;
+  top:10px;
+  left:10px;
+  color:white;
+  font-family:sans-serif;
 }
 </style>
 </head>
 
 <body>
 
-<div id="joystick">
-  <div id="stick"></div>
-</div>
-<button id="jump">⬆</button>
+<div id="ui">❤️ HP: <span id="hp">100</span></div>
+
+<div id="joystick"><div id="stick"></div></div>
+<button id="jump" class="btn">⬆</button>
+<button id="attack" class="btn">⚔️</button>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
@@ -86,6 +97,29 @@ const player = new THREE.Mesh(
 player.position.y = 1;
 scene.add(player);
 
+let playerHP = 100;
+
+// === ВРАГИ ===
+const enemies = [];
+function spawnEnemy(x,z,hp=30,scale=1,color=0x3333ff){
+  const e = new THREE.Mesh(
+    new THREE.BoxGeometry(1,2,1),
+    new THREE.MeshStandardMaterial({color})
+  );
+  e.position.set(x,1,z);
+  e.scale.set(scale,scale,scale);
+  e.hp = hp;
+  enemies.push(e);
+  scene.add(e);
+}
+
+spawnEnemy(5,5);
+spawnEnemy(-6,4);
+spawnEnemy(3,-7);
+
+// === БОСС ===
+spawnEnemy(0,15,150,3,0x000000);
+
 // === ФИЗИКА ===
 let velY = 0;
 let onGround = true;
@@ -94,98 +128,102 @@ let onGround = true;
 let camAngle = 0;
 let camDist = 8;
 
-// === ПК УПРАВЛЕНИЕ ===
+// === ПК ===
 const keys = {};
-addEventListener("keydown", e=>keys[e.key]=true);
+addEventListener("keydown", e=>{
+  keys[e.key]=true;
+  if(e.key===" ") attack();
+});
 addEventListener("keyup", e=>keys[e.key]=false);
 
-// === ПОВОРОТ КАМЕРЫ (МЫШЬ + ПАЛЕЦ) ===
-let dragging = false;
-let lastX = 0;
-
-addEventListener("mousedown", e=>{
-  dragging = true;
-  lastX = e.clientX;
-});
+// === ПОВОРОТ КАМЕРЫ ===
+let dragging = false, lastX=0;
+addEventListener("mousedown", e=>{dragging=true; lastX=e.clientX});
 addEventListener("mouseup", ()=>dragging=false);
 addEventListener("mousemove", e=>{
-  if(dragging){
-    camAngle -= (e.clientX - lastX) * 0.005;
-    lastX = e.clientX;
-  }
+  if(dragging){ camAngle -= (e.clientX-lastX)*0.005; lastX=e.clientX; }
 });
-
 addEventListener("touchstart", e=>{
-  if(e.touches.length===1){
-    dragging = true;
-    lastX = e.touches[0].clientX;
-  }
+  if(e.touches.length===1){ dragging=true; lastX=e.touches[0].clientX; }
 });
 addEventListener("touchend", ()=>dragging=false);
 addEventListener("touchmove", e=>{
-  if(dragging){
-    camAngle -= (e.touches[0].clientX - lastX) * 0.005;
-    lastX = e.touches[0].clientX;
-  }
+  if(dragging){ camAngle -= (e.touches[0].clientX-lastX)*0.005; lastX=e.touches[0].clientX; }
 });
 
 // === ДЖОЙСТИК ===
 const joy = document.getElementById("joystick");
 const stick = document.getElementById("stick");
-let joyX = 0, joyY = 0;
+let joyX=0, joyY=0;
 
-joy.addEventListener("touchstart", e=>moveJoy(e));
-joy.addEventListener("touchmove", e=>moveJoy(e));
+joy.addEventListener("touchstart", moveJoy);
+joy.addEventListener("touchmove", moveJoy);
 joy.addEventListener("touchend", ()=>{
-  joyX = joyY = 0;
-  stick.style.left = "45px";
-  stick.style.top = "45px";
+  joyX=joyY=0;
+  stick.style.left="45px";
+  stick.style.top="45px";
 });
 
 function moveJoy(e){
-  const rect = joy.getBoundingClientRect();
-  const x = e.touches[0].clientX - rect.left - 70;
-  const y = e.touches[0].clientY - rect.top - 70;
-  const d = Math.min(40, Math.hypot(x,y));
-  const a = Math.atan2(y,x);
-  joyX = Math.cos(a)*(d/40);
-  joyY = Math.sin(a)*(d/40);
-  stick.style.left = 45 + Math.cos(a)*d + "px";
-  stick.style.top  = 45 + Math.sin(a)*d + "px";
+  const r=joy.getBoundingClientRect();
+  const x=e.touches[0].clientX-r.left-70;
+  const y=e.touches[0].clientY-r.top-70;
+  const d=Math.min(40,Math.hypot(x,y));
+  const a=Math.atan2(y,x);
+  joyX=Math.cos(a)*(d/40);
+  joyY=Math.sin(a)*(d/40);
+  stick.style.left=45+Math.cos(a)*d+"px";
+  stick.style.top=45+Math.sin(a)*d+"px";
 }
 
 // === ПРЫЖОК ===
-jump.onclick = ()=>{
-  if(onGround){
-    velY = 0.35;
-    onGround = false;
-  }
+jump.onclick=()=>{
+  if(onGround){ velY=0.35; onGround=false; }
 };
+
+// === АТАКА ===
+attack.onclick = attack;
+function attack(){
+  enemies.forEach((e,i)=>{
+    const d = player.position.distanceTo(e.position);
+    if(d < 3){
+      e.hp -= 20;
+      e.material.color.set(0xff0000);
+      setTimeout(()=>e.material.color.set(0x3333ff),100);
+      if(e.hp<=0){
+        scene.remove(e);
+        enemies.splice(i,1);
+      }
+    }
+  });
+}
 
 // === ОБНОВЛЕНИЕ ===
 function update(){
-  let speed = 0.15;
+  let speed=0.15;
+  if(keys["w"]) player.position.z-=speed;
+  if(keys["s"]) player.position.z+=speed;
+  if(keys["a"]) player.position.x-=speed;
+  if(keys["d"]) player.position.x+=speed;
 
-  // ПК
-  if(keys["w"]) player.position.z -= speed;
-  if(keys["s"]) player.position.z += speed;
-  if(keys["a"]) player.position.x -= speed;
-  if(keys["d"]) player.position.x += speed;
+  player.position.x+=joyX*speed*1.5;
+  player.position.z+=joyY*speed*1.5;
 
-  // Джойстик
-  player.position.x += joyX * speed * 1.5;
-  player.position.z += joyY * speed * 1.5;
+  velY-=0.02;
+  player.position.y+=velY;
+  if(player.position.y<=1){ player.position.y=1; velY=0; onGround=true; }
 
-  // Гравитация
-  velY -= 0.02;
-  player.position.y += velY;
-  if(player.position.y <= 1){
-    player.position.y = 1;
-    velY = 0;
-    onGround = true;
-  }
+  enemies.forEach(e=>{
+    e.lookAt(player.position);
+    e.position.x += Math.sin(e.rotation.y)*0.03;
+    e.position.z += Math.cos(e.rotation.y)*0.03;
 
-  // Камера Roblox‑style
+    if(player.position.distanceTo(e.position)<1.5){
+      playerHP -= 0.2;
+      document.getElementById("hp").textContent = Math.max(0,Math.floor(playerHP));
+    }
+  });
+
   camera.position.set(
     player.position.x + Math.sin(camAngle)*camDist,
     player.position.y + 4,
@@ -197,14 +235,14 @@ function update(){
 function animate(){
   requestAnimationFrame(animate);
   update();
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
 }
 animate();
 
-onresize = ()=>{
-  camera.aspect = innerWidth/innerHeight;
+onresize=()=>{
+  camera.aspect=innerWidth/innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
+  renderer.setSize(innerWidth,innerHeight);
 };
 </script>
 
