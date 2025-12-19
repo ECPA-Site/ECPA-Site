@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Колесо Фортуны</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        .wheel {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .spoke {
+            width: 100px;
+            height: 100px;
+            background-color: transparent;
+            border: 2px solid black;
+            border-radius: 50%;
+            position: absolute;
+            box-sizing: border-box;
+        }
+
+        .spoke:nth-child(odd) {
+            animation: spin 5s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="wheel">
+        <div class="spoke">1</div>
+        <div class="spoke">2</div>
+        <div class="spoke">3</div>
+        <div class="spoke">4</div>
+        <div class="spoke">5</div>
+        <div class="spoke">6</div>
+        <div class="spoke">7</div>
+        <div class="spoke">8</div>
+        <div class="spoke">9</div>
+        <div class="spoke">10</div>
+        <div class="spoke">11</div>
+        <div class="spoke">12</div>
+    </div>
+    <script src="script.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const spokes = document.querySelectorAll('.spoke');
+
+            // Добавьте случайные цвета к каждой части колеса
+            spokes.forEach(spoke => {
+                let color = Math.floor(Math.random() * 16777215).toString(16);
+                while (color.length < 6) color = '0' + color;
+                spoke.style.backgroundColor = `#${color}`;
+            });
+        });
+    </script>
+</body>
+</html>
