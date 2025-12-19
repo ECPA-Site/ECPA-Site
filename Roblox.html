@@ -2,37 +2,30 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Roblox Mobile Edition</title>
+    <title>Roblox Mobile - Full Camera</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; touch-action: none; }
-        #gui { position: fixed; top: 10px; left: 10px; color: white; pointer-events: none; z-index: 10; font-size: 14px; }
+        #gui { position: fixed; top: 10px; left: 10px; color: white; pointer-events: none; z-index: 10; }
         .card { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; backdrop-filter: blur(5px); }
         .bar { width: 150px; height: 8px; background: #222; border-radius: 4px; margin-top: 5px; overflow: hidden; }
         #hp-fill { width: 100%; height: 100%; background: #00ff44; transition: 0.3s; }
         
-        /* Стики и кнопки для мобилок */
-        #joystick-zone { position: fixed; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); }
-        #stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: white; border-radius: 50%; opacity: 0.8; }
+        /* Управление */
+        #joystick-zone { position: fixed; bottom: 40px; left: 40px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 2px solid white; z-index: 20; }
+        #stick { position: absolute; top: 25px; left: 25px; width: 50px; height: 50px; background: white; border-radius: 50%; opacity: 0.8; pointer-events: none; }
         
-        #attack-btn { position: fixed; bottom: 50px; right: 40px; width: 80px; height: 80px; background: rgba(255,0,0,0.6); border-radius: 50%; border: 4px solid white; color: white; font-size: 30px; display: flex; align-items: center; justify-content: center; user-select: none; }
-
-        #boss-ui { position: fixed; top: 10px; right: 10px; display: none; }
+        #attack-btn { position: fixed; bottom: 40px; right: 40px; width: 70px; height: 70px; background: rgba(255,0,0,0.6); border-radius: 50%; border: 3px solid white; color: white; font-size: 30px; display: flex; align-items: center; justify-content: center; z-index: 20; }
     </style>
 </head>
 <body>
 
 <div id="gui">
     <div class="card">
-        <b>❤️ ЖИЗНЬ</b>
+        <b>❤️ HP</b>
         <div class="bar"><div id="hp-fill"></div></div>
-        <div style="margin-top:5px;">💎 КРИСТАЛЛЫ: <span id="coins">0</span> / 50</div>
+        <div style="margin-top:5px;">💎 CRYSTALS: <span id="coins">0</span></div>
     </div>
-</div>
-
-<div id="boss-ui" class="card">
-    <b style="color: #ff0055;">БОСС АКТИВЕН</b>
-    <div class="bar"><div id="boss-hp-fill" style="width:100%; background:#ff0055;"></div></div>
 </div>
 
 <div id="joystick-zone"><div id="stick"></div></div>
@@ -42,20 +35,21 @@
 
 <script>
 /** --- НАСТРОЙКИ --- **/
-let playerHP = 100, coins = 0, isDead = false, bossActive = false;
-const enemies = [];
+let playerHP = 100, coins = 0, isDead = false;
 let joyX = 0, joyY = 0;
-let yaw = 0, pitch = 0.3;
+let yaw = 0, pitch = 0.5;
+let lastTouchX = 0;
+const enemies = [];
 
 /** --- СЦЕНА --- **/
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87CEEB); // Голубое небо
+scene.background = new THREE.Color(0x87CEEB);
 scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: false }); // Отключаем сглаживание для скорости на мобилках
+const renderer = new THREE.WebGLRenderer({ antialias: false });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Оптимизация разрешения
+renderer.setPixelRatio(window.devicePixelRatio > 1 ? 1.5 : 1);
 document.body.appendChild(renderer.domElement);
 
 const ambient = new THREE.AmbientLight(0xffffff, 0.7);
@@ -64,101 +58,76 @@ const sun = new THREE.DirectionalLight(0xffffff, 0.8);
 sun.position.set(10, 20, 10);
 scene.add(sun);
 
-// Зеленая трава
-const groundGeo = new THREE.PlaneGeometry(200, 200);
-const groundMat = new THREE.MeshStandardMaterial({ color: 0x2d9e2d }); // Насыщенный зеленый
-const ground = new THREE.Mesh(groundGeo, groundMat);
+// Трава
+const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(200, 200),
+    new THREE.MeshStandardMaterial({ color: 0x3ea33e })
+);
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
-/** --- МОДЕЛИ --- **/
-function createModel(color, hasWeapon = false) {
-    const group = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1, 0.5), new THREE.MeshStandardMaterial({color}));
-    body.position.y = 0.5;
-    group.add(body);
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshStandardMaterial({color}));
-    head.position.y = 1.3;
-    group.add(head);
-    if(hasWeapon) {
-        const weapon = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 1), new THREE.MeshStandardMaterial({color: 0xff0000}));
-        weapon.position.set(0.5, 0.5, 0.3);
-        group.add(weapon);
-    }
-    return group;
-}
-
-const player = createModel(0x00f2ff);
+/** --- МОДЕЛЬ ИГРОКА --- **/
+const player = new THREE.Group();
+const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.2, 0.5), new THREE.MeshStandardMaterial({color: 0x00d4ff}));
+body.position.y = 0.6;
+player.add(body);
 scene.add(player);
 
 function spawnEnemy() {
-    const e = createModel(0xff4400, true);
-    e.position.set(Math.random()*60-30, 0, Math.random()*60-30);
+    const e = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.2, 0.8), new THREE.MeshStandardMaterial({color: 0xff4400}));
+    e.position.set(Math.random()*40-20, 0.6, Math.random()*40-20);
     e.userData = { hp: 30 };
     enemies.push(e);
     scene.add(e);
 }
-for(let i=0; i<6; i++) spawnEnemy();
+for(let i=0; i<5; i++) spawnEnemy();
 
-/** --- МОБИЛЬНОЕ УПРАВЛЕНИЕ --- **/
+/** --- УПРАВЛЕНИЕ КАМЕРОЙ И ДЖОЙСТИКОМ --- **/
 const stick = document.getElementById('stick');
 const joyZone = document.getElementById('joystick-zone');
 
-// Джойстик (Левая рука)
 window.addEventListener('touchstart', (e) => {
-    handleTouch(e);
+    for(let i=0; i<e.touches.length; i++) {
+        if(e.touches[i].clientX > window.innerWidth / 2) {
+            lastTouchX = e.touches[i].clientX; // Запоминаем начало касания для камеры
+        }
+    }
 }, {passive: false});
 
 window.addEventListener('touchmove', (e) => {
     e.preventDefault();
-    handleTouch(e);
-}, {passive: false});
-
-window.addEventListener('touchend', () => {
-    joyX = 0; joyY = 0;
-    stick.style.transform = `translate(0px, 0px)`;
-}, {passive: false});
-
-function handleTouch(e) {
-    for (let i = 0; i < e.touches.length; i++) {
-        const touch = e.touches[i];
-        const rect = joyZone.getBoundingClientRect();
+    for(let i=0; i<e.touches.length; i++) {
+        const t = e.touches[i];
         
-        // Если тач в зоне джойстика
-        if (touch.clientX < window.innerWidth / 2) {
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            const dx = touch.clientX - centerX;
-            const dy = touch.clientY - centerY;
+        // ЛЕВАЯ ЧАСТЬ - ДЖОЙСТИК
+        if (t.clientX < window.innerWidth / 2) {
+            const rect = joyZone.getBoundingClientRect();
+            const dx = t.clientX - (rect.left + 50);
+            const dy = t.clientY - (rect.top + 50);
             const dist = Math.min(Math.hypot(dx, dy), 40);
             const angle = Math.atan2(dy, dx);
-            
             joyX = Math.cos(angle) * (dist / 40);
             joyY = Math.sin(angle) * (dist / 40);
-            
             stick.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
-        } else {
-            // Если тач в правой части экрана — вращаем камеру
-            if (e.type === 'touchmove') {
-                // Упрощенное вращение для мобилок
-                yaw -= 0.05 * (touch.force || 1); // В реальном проекте тут нужна дельта координат
-            }
+        } 
+        // ПРАВАЯ ЧАСТЬ - ВРАЩЕНИЕ КАМЕРЫ
+        else {
+            const deltaX = t.clientX - lastTouchX;
+            yaw -= deltaX * 0.007; // Чувствительность поворота
+            lastTouchX = t.clientX;
         }
     }
-}
+}, {passive: false});
 
-// Кнопка атаки
-document.getElementById('attack-btn').addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    performAttack();
+window.addEventListener('touchend', (e) => {
+    if(e.touches.length === 0) {
+        joyX = 0; joyY = 0;
+        stick.style.transform = `translate(0,0)`;
+    }
 });
 
-// Поддержка клавиатуры (для ПК)
-const keys = {};
-window.addEventListener('keydown', e => keys[e.code] = true);
-window.addEventListener('keyup', e => keys[e.code] = false);
-
-function performAttack() {
+// Атака
+document.getElementById('attack-btn').addEventListener('touchstart', () => {
     enemies.forEach((e, i) => {
         if(player.position.distanceTo(e.position) < 4) {
             e.userData.hp -= 15;
@@ -171,52 +140,42 @@ function performAttack() {
             }
         }
     });
-}
+});
 
-/** --- ЦИКЛ ИГРЫ --- **/
+/** --- ГЛАВНЫЙ ЦИКЛ --- **/
 const clock = new THREE.Clock();
 function animate() {
     requestAnimationFrame(animate);
     const dt = clock.getDelta();
-    if(isDead) return;
 
-    // Движение (Клавиатура + Джойстик)
-    const move = new THREE.Vector3();
-    if(keys['KeyW']) move.z -= 1;
-    if(keys['KeyS']) move.z += 1;
-    if(keys['KeyA']) move.x -= 1;
-    if(keys['KeyD']) move.x += 1;
-    
-    // Добавляем джойстик
-    move.x += joyX;
-    move.z += joyY;
-
-    if(move.length() > 0.1) {
+    // Передвижение
+    if(Math.abs(joyX) > 0.1 || Math.abs(joyY) > 0.1) {
+        const move = new THREE.Vector3(joyX, 0, joyY);
         move.applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
-        player.position.addScaledVector(move.normalize(), 8 * dt);
-        player.rotation.y = yaw;
+        player.position.addScaledVector(move, 8 * dt);
+        player.rotation.y = yaw + Math.atan2(-joyX, -joyY);
     }
 
     // Враги
     enemies.forEach(e => {
         const d = player.position.distanceTo(e.position);
         if(d < 15) {
-            e.lookAt(player.position.x, 0, player.position.z);
+            e.lookAt(player.position.x, 0.6, player.position.z);
             e.position.addScaledVector(new THREE.Vector3().subVectors(player.position, e.position).normalize(), 3 * dt);
             if(d < 1.4) {
-                playerHP -= 5 * dt;
-                document.getElementById('hp-fill').style.width = playerHP + "%";
-                if(playerHP <= 0) { alert("ИГРА ОКОНЧЕНА"); location.reload(); }
+                playerHP -= 10 * dt;
+                document.getElementById('hp-fill').style.width = Math.max(0, playerHP) + "%";
+                if(playerHP <= 0) location.reload();
             }
         }
     });
 
-    // Камера (следует за игроком)
-    const dist = 8;
+    // Камера (Орбитальная)
+    const camDist = 10;
     camera.position.set(
-        player.position.x + Math.sin(yaw) * dist,
-        player.position.y + 5,
-        player.position.z + Math.cos(yaw) * dist
+        player.position.x + Math.sin(yaw) * camDist,
+        player.position.y + 6,
+        player.position.z + Math.cos(yaw) * camDist
     );
     camera.lookAt(player.position.x, player.position.y, player.position.z);
 
