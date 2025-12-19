@@ -2,21 +2,31 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Roblox Mobile - Regen Edition</title>
+    <title>Roblox Mobile - Save System</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; touch-action: none; }
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Segoe UI', sans-serif; touch-action: none; }
         #gui { position: fixed; top: 10px; left: 10px; color: white; pointer-events: none; z-index: 10; }
-        .card { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; backdrop-filter: blur(5px); }
-        .bar { width: 150px; height: 8px; background: #222; border-radius: 4px; margin-top: 5px; overflow: hidden; }
-        #hp-fill { width: 100%; height: 100%; background: #00ff44; transition: width 0.3s; }
+        .card { background: rgba(0,0,0,0.6); padding: 12px; border-radius: 12px; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); }
+        .bar { width: 160px; height: 10px; background: #222; border-radius: 5px; margin-top: 5px; overflow: hidden; border: 1px solid #444; }
+        #hp-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #00ff44, #00ffcc); transition: width 0.3s; }
         
-        #joystick-zone { position: fixed; bottom: 40px; left: 40px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 2px solid white; z-index: 20; }
-        #stick { position: absolute; top: 25px; left: 25px; width: 50px; height: 50px; background: white; border-radius: 50%; opacity: 0.8; pointer-events: none; }
-        
-        #attack-btn { position: fixed; bottom: 40px; right: 40px; width: 70px; height: 70px; background: rgba(255,0,0,0.6); border-radius: 50%; border: 3px solid white; color: white; font-size: 30px; display: flex; align-items: center; justify-content: center; z-index: 20; }
-        
-        #regen-label { font-size: 10px; color: #00ff44; display: none; margin-top: 2px; }
+        /* Кнопка меню */
+        #menu-open { position: fixed; top: 10px; right: 10px; padding: 10px 20px; background: rgba(0,0,0,0.6); color: white; border-radius: 8px; border: 1px solid white; pointer-events: auto; cursor: pointer; }
+
+        /* Окно сохранений */
+        #save-menu { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: white; backdrop-filter: blur(10px); }
+        .slot { background: #333; margin: 8px; padding: 15px; border-radius: 10px; width: 280px; border: 1px solid #555; }
+        .slot b { color: #00f2ff; display: block; margin-bottom: 5px; }
+        .slot button { margin: 5px 5px 0 0; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-save { background: #28a745; color: white; }
+        .btn-load { background: #007bff; color: white; }
+        #close-menu { margin-top: 20px; background: #ff4444; color: white; padding: 10px 30px; border-radius: 20px; border: none; }
+
+        /* Управление */
+        #joystick-zone { position: fixed; bottom: 40px; left: 40px; width: 110px; height: 110px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 2px solid white; z-index: 20; }
+        #stick { position: absolute; top: 30px; left: 30px; width: 50px; height: 50px; background: white; border-radius: 50%; opacity: 0.8; pointer-events: none; }
+        #attack-btn { position: fixed; bottom: 40px; right: 40px; width: 80px; height: 80px; background: rgba(255,50,50,0.7); border-radius: 50%; border: 4px solid white; color: white; font-size: 35px; display: flex; align-items: center; justify-content: center; z-index: 20; box-shadow: 0 0 20px rgba(255,0,0,0.3); }
     </style>
 </head>
 <body>
@@ -25,9 +35,16 @@
     <div class="card">
         <b>❤️ ЖИЗНЬ</b>
         <div class="bar"><div id="hp-fill"></div></div>
-        <div id="regen-label">РЕГЕНЕРАЦИЯ...</div>
-        <div style="margin-top:5px;">💎 КРИСТАЛЛЫ: <span id="coins">0</span></div>
+        <div style="margin-top:8px; font-weight: bold;">💎 КРИСТАЛЛЫ: <span id="coins">0</span></div>
     </div>
+</div>
+
+<div id="menu-open" onclick="toggleMenu(true)">💾 МЕНЮ</div>
+
+<div id="save-menu">
+    <h2>СИСТЕМА СОХРАНЕНИЙ (4 СЛОТА)</h2>
+    <div id="slots-container"></div>
+    <button id="close-menu" onclick="toggleMenu(false)">НАЗАД В ИГРУ</button>
 </div>
 
 <div id="joystick-zone"><div id="stick"></div></div>
@@ -36,13 +53,55 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <script>
-/** --- НАСТРОЙКИ --- **/
+/** --- ПЕРЕМЕННЫЕ --- **/
 let playerHP = 100, maxHP = 100, coins = 0;
-let lastHitTime = 0; // Время последнего получения урона
-let joyX = 0, joyY = 0;
-let yaw = 0;
-let lastTouchX = 0;
-const enemies = [];
+let lastHitTime = 0, joyX = 0, joyY = 0, yaw = 0, lastTouchX = 0;
+const enemies = [], particles = [];
+
+/** --- СИСТЕМА СОХРАНЕНИЙ --- **/
+function toggleMenu(show) {
+    document.getElementById('save-menu').style.display = show ? 'flex' : 'none';
+    if(show) updateSlotsUI();
+}
+
+function saveGame(slotId) {
+    const data = {
+        hp: playerHP,
+        coins: coins,
+        date: new Date().toLocaleString()
+    };
+    localStorage.setItem('roblox_slot_' + slotId, JSON.stringify(data));
+    updateSlotsUI();
+    alert("Игра сохранена в слот " + slotId);
+}
+
+function loadGame(slotId) {
+    const data = JSON.parse(localStorage.getItem('roblox_slot_' + slotId));
+    if(data) {
+        playerHP = data.hp;
+        coins = data.coins;
+        document.getElementById('coins').innerText = coins;
+        toggleMenu(false);
+        alert("Загружено!");
+    }
+}
+
+function updateSlotsUI() {
+    const container = document.getElementById('slots-container');
+    container.innerHTML = '';
+    for(let i=1; i<=4; i++) {
+        const data = JSON.parse(localStorage.getItem('roblox_slot_' + i));
+        const div = document.createElement('div');
+        div.className = 'slot';
+        div.innerHTML = `
+            <b>СЛОТ ${i}</b>
+            <div style="font-size: 12px; opacity: 0.8;">${data ? `💎:${data.coins} | ❤️:${Math.round(data.hp)}%<br>${data.date}` : 'Пусто'}</div>
+            <button class="btn-save" onclick="saveGame(${i})">Save</button>
+            ${data ? `<button class="btn-load" onclick="loadGame(${i})">Load</button>` : ''}
+        `;
+        container.appendChild(div);
+    }
+}
 
 /** --- СЦЕНА --- **/
 const scene = new THREE.Scene();
@@ -60,14 +119,11 @@ const sun = new THREE.DirectionalLight(0xffffff, 0.8);
 sun.position.set(10, 20, 10);
 scene.add(sun);
 
-const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(200, 200),
-    new THREE.MeshStandardMaterial({ color: 0x3ea33e })
-);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0x3ea33e }));
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
-/** --- МОДЕЛИ --- **/
+/** --- ПЕРСОНАЖ И ВРАГИ --- **/
 const player = new THREE.Group();
 const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.2, 0.5), new THREE.MeshStandardMaterial({color: 0x00d4ff}));
 body.position.y = 0.6;
@@ -81,7 +137,18 @@ function spawnEnemy() {
     enemies.push(e);
     scene.add(e);
 }
-for(let i=0; i<5; i++) spawnEnemy();
+for(let i=0; i<6; i++) spawnEnemy();
+
+/** --- ЧАСТИЦЫ РЕГЕНЕРАЦИИ --- **/
+function spawnRegenParticle() {
+    const pGeo = new THREE.PlaneGeometry(0.2, 0.2);
+    const pMat = new THREE.MeshBasicMaterial({ color: 0x00ff44, transparent: true, opacity: 0.8 });
+    const p = new THREE.Mesh(pGeo, pMat);
+    p.position.set(player.position.x + (Math.random()-0.5), 0.5, player.position.z + (Math.random()-0.5));
+    p.userData = { life: 1.0 };
+    particles.push(p);
+    scene.add(p);
+}
 
 /** --- УПРАВЛЕНИЕ --- **/
 const stick = document.getElementById('stick');
@@ -94,13 +161,14 @@ window.addEventListener('touchstart', (e) => {
 }, {passive: false});
 
 window.addEventListener('touchmove', (e) => {
+    if(document.getElementById('save-menu').style.display === 'flex') return;
     e.preventDefault();
     for(let i=0; i<e.touches.length; i++) {
         const t = e.touches[i];
         if (t.clientX < window.innerWidth / 2) {
             const rect = joyZone.getBoundingClientRect();
-            const dx = t.clientX - (rect.left + 50);
-            const dy = t.clientY - (rect.top + 50);
+            const dx = t.clientX - (rect.left + rect.width/2);
+            const dy = t.clientY - (rect.top + rect.height/2);
             const dist = Math.min(Math.hypot(dx, dy), 40);
             const angle = Math.atan2(dy, dx);
             joyX = Math.cos(angle) * (dist / 40);
@@ -108,7 +176,7 @@ window.addEventListener('touchmove', (e) => {
             stick.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
         } else {
             const deltaX = t.clientX - lastTouchX;
-            yaw -= deltaX * 0.007;
+            yaw -= deltaX * 0.008;
             lastTouchX = t.clientX;
         }
     }
@@ -121,12 +189,13 @@ window.addEventListener('touchend', (e) => {
     }
 });
 
-document.getElementById('attack-btn').addEventListener('touchstart', () => {
-    enemies.forEach((e, i) => {
-        if(player.position.distanceTo(e.position) < 4) {
-            e.userData.hp -= 15;
-            if(e.userData.hp <= 0) {
-                scene.remove(e);
+document.getElementById('attack-btn').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    enemies.forEach((en, i) => {
+        if(player.position.distanceTo(en.position) < 4) {
+            en.userData.hp -= 15;
+            if(en.userData.hp <= 0) {
+                scene.remove(en);
                 enemies.splice(i, 1);
                 coins += 5;
                 document.getElementById('coins').innerText = coins;
@@ -136,14 +205,14 @@ document.getElementById('attack-btn').addEventListener('touchstart', () => {
     });
 });
 
-/** --- ГЛАВНЫЙ ЦИКЛ --- **/
+/** --- ЦИКЛ --- **/
 const clock = new THREE.Clock();
 function animate() {
     requestAnimationFrame(animate);
     const dt = clock.getDelta();
     const now = Date.now();
 
-    // 1. Движение
+    // Движение
     if(Math.abs(joyX) > 0.1 || Math.abs(joyY) > 0.1) {
         const move = new THREE.Vector3(joyX, 0, joyY);
         move.applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
@@ -151,40 +220,40 @@ function animate() {
         player.rotation.y = yaw + Math.atan2(-joyX, -joyY);
     }
 
-    // 2. Враги и Урон
+    // Регенерация
+    if (now - lastHitTime > 3000 && playerHP < maxHP) {
+        playerHP += 5 * dt;
+        if(Math.random() > 0.8) spawnRegenParticle();
+    }
+    document.getElementById('hp-fill').style.width = Math.max(0, playerHP) + "%";
+
+    // Частицы
+    for(let i=particles.length-1; i>=0; i--) {
+        particles[i].position.y += dt;
+        particles[i].userData.life -= dt;
+        particles[i].material.opacity = particles[i].userData.life;
+        if(particles[i].userData.life <= 0) {
+            scene.remove(particles[i]);
+            particles.splice(i, 1);
+        }
+    }
+
+    // Враги
     enemies.forEach(e => {
         const d = player.position.distanceTo(e.position);
         if(d < 15) {
             e.lookAt(player.position.x, 0.6, player.position.z);
-            e.position.addScaledVector(new THREE.Vector3().subVectors(player.position, e.position).normalize(), 3 * dt);
+            e.position.addScaledVector(new THREE.Vector3().subVectors(player.position, e.position).normalize(), 3.5 * dt);
             if(d < 1.4) {
-                playerHP -= 10 * dt;
-                lastHitTime = now; // Засекаем время удара
+                playerHP -= 15 * dt;
+                lastHitTime = now;
                 if(playerHP <= 0) location.reload();
             }
         }
     });
 
-    // 3. АВТОМАТИЧЕСКАЯ РЕГЕНЕРАЦИЯ
-    // Если прошло больше 3 секунд после удара и HP меньше максимума
-    if (now - lastHitTime > 3000 && playerHP < maxHP) {
-        playerHP += 5 * dt; // Скорость регена: 5 HP в сек.
-        if (playerHP > maxHP) playerHP = maxHP;
-        document.getElementById('regen-label').style.display = 'block';
-    } else {
-        document.getElementById('regen-label').style.display = 'none';
-    }
-    
-    // Обновляем полоску HP в интерфейсе
-    document.getElementById('hp-fill').style.width = Math.max(0, playerHP) + "%";
-
-    // 4. Камера
-    const camDist = 10;
-    camera.position.set(
-        player.position.x + Math.sin(yaw) * camDist,
-        player.position.y + 6,
-        player.position.z + Math.cos(yaw) * camDist
-    );
+    // Камера
+    camera.position.set(player.position.x + Math.sin(yaw)*10, player.position.y + 6, player.position.z + Math.cos(yaw)*10);
     camera.lookAt(player.position.x, player.position.y, player.position.z);
 
     renderer.render(scene, camera);
