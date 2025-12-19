@@ -2,185 +2,236 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Roblox Mobile - Ultra Fix</title>
+    <title>Roblox Mobile - Full Version</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body { margin: 0; overflow: hidden; background: #2c3e50; font-family: sans-serif; touch-action: none; }
         
-        /* Главное меню выбора */
-        #char-select { 
-            position: fixed; inset: 0; 
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d); 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            z-index: 9999; color: white; text-align: center;
-        }
-        .char-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; }
-        .char-btn { 
-            padding: 25px 15px; border-radius: 15px; border: 4px solid white; 
-            font-weight: bold; font-size: 16px; cursor: pointer; color: white;
-            transition: 0.2s; text-shadow: 1px 1px 2px black;
-        }
+        /* Экран выбора */
+        #char-select { position: fixed; inset: 0; background: radial-gradient(circle, #1a2a6c, #000); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; }
+        .char-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .char-btn { padding: 20px; border-radius: 15px; border: 3px solid white; font-weight: bold; cursor: pointer; text-align: center; width: 130px; }
         .red { background: #e74c3c; } .brown { background: #795548; }
-        .blue { background: #3498db; } .yellow { background: #f1c40f; color: black; text-shadow: none; }
+        .blue { background: #3498db; } .yellow { background: #f1c40f; color: black; }
 
         /* Игровой интерфейс */
         #gui { position: fixed; top: 10px; left: 10px; z-index: 100; display: none; color: white; pointer-events: none; }
-        .hud-card { background: rgba(0,0,0,0.6); padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); }
-        .hp-bar { width: 150px; height: 12px; background: #222; border-radius: 6px; margin: 5px 0; overflow: hidden; }
+        .hud-card { background: rgba(0,0,0,0.6); padding: 12px; border-radius: 12px; backdrop-filter: blur(5px); }
+        .hp-bar { width: 160px; height: 12px; background: #222; border-radius: 6px; margin: 5px 0; overflow: hidden; }
         #hp-fill { width: 100%; height: 100%; background: #2ecc71; transition: 0.3s; }
+        #regen-text { font-size: 10px; color: #2ecc71; display: none; }
 
-        /* Стики и Кнопки */
-        #controls { position: fixed; inset: 0; display: none; pointer-events: none; z-index: 50; }
-        #joystick-zone { position: absolute; bottom: 50px; left: 50px; width: 100px; height: 100px; border: 3px solid white; border-radius: 50%; pointer-events: auto; }
+        /* Меню сохранений */
+        #slots-btn { position: fixed; top: 10px; right: 10px; z-index: 101; padding: 10px; background: rgba(0,0,0,0.7); color: white; border: 1px solid white; border-radius: 8px; display: none; }
+        #save-menu { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        .slot-box { background: #333; margin: 5px; padding: 10px; border-radius: 8px; width: 260px; border: 1px solid #555; }
+        .slot-box button { margin-top: 5px; padding: 5px 10px; }
+
+        /* Управление */
+        #controls { position: fixed; inset: 0; display: none; z-index: 50; pointer-events: none; }
+        #joystick { position: absolute; bottom: 50px; left: 50px; width: 100px; height: 100px; border: 2px solid white; border-radius: 50%; pointer-events: auto; }
         #stick { position: absolute; top: 25px; left: 25px; width: 50px; height: 50px; background: white; border-radius: 50%; opacity: 0.7; }
-        #attack-btn { position: absolute; bottom: 60px; right: 50px; width: 80px; height: 80px; background: rgba(231, 76, 60, 0.8); border: 4px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; pointer-events: auto; }
+        #attack-btn { position: absolute; bottom: 60px; right: 50px; width: 80px; height: 80px; background: rgba(231,76,60,0.8); border: 4px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; pointer-events: auto; }
+        #boss-hud { position: fixed; top: 80px; left: 10px; display: none; }
     </style>
 </head>
 <body>
 
 <div id="char-select">
-    <h1 style="margin-bottom: 30px;">ВЫБЕРИ СВОЕГО ГЕРОЯ</h1>
+    <h1>ВЫБЕРИ ГЕРОЯ</h1>
     <div class="char-grid">
-        <div class="char-btn red" id="btn-RedShadow">RedShadow</div>
-        <div class="char-btn brown" id="btn-MrFlicer">MrFlicer</div>
-        <div class="char-btn blue" id="btn-Joper546">Joper546</div>
-        <div class="char-btn yellow" id="btn-Dobrikotikleast">Dobrikotikleast</div>
+        <div class="char-btn red" id="hero-RedShadow">RedShadow</div>
+        <div class="char-btn brown" id="hero-MrFlicer">MrFlicer</div>
+        <div class="char-btn blue" id="hero-Joper546">Joper546</div>
+        <div class="char-btn yellow" id="hero-Dobrikotikleast">Dobrikotikleast</div>
     </div>
 </div>
 
 <div id="gui">
     <div class="hud-card">
-        <b id="display-name">...</b>
+        <b id="p-name">...</b>
         <div class="hp-bar"><div id="hp-fill"></div></div>
-        <div>💎 Кристаллы: <span id="coin-count">0</span></div>
+        <div id="regen-text">РЕГЕНЕРАЦИЯ...</div>
+        <div>💎: <span id="coin-txt">0</span> / 50</div>
+    </div>
+    <div id="boss-hud" class="hud-card" style="border-color: #9b59b6;">
+        <b style="color: #9b59b6;">ELON BOSS</b>
+        <div class="hp-bar"><div id="boss-hp-fill" style="background: #9b59b6;"></div></div>
     </div>
 </div>
 
+<button id="slots-btn" onclick="toggleSaveMenu(true)">💾 СЛОТЫ</button>
+
+<div id="save-menu">
+    <h2>СОХРАНЕНИЯ</h2>
+    <div id="slots-list"></div>
+    <button onclick="toggleSaveMenu(false)" style="margin-top:20px; padding:10px 40px;">ЗАКРЫТЬ</button>
+</div>
+
 <div id="controls">
-    <div id="joystick-zone"><div id="stick"></div></div>
+    <div id="joystick"><div id="stick"></div></div>
     <div id="attack-btn">⚔️</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <script>
-/** --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ --- **/
-let scene, camera, renderer, player, playerMesh;
-let playerHP = 100, coins = 0;
-let joyX = 0, joyY = 0, yaw = 0, lastTouchX = 0;
-const enemies = [];
+let scene, camera, renderer, player, pMesh, boss;
+let playerHP = 100, maxHP = 100, coins = 0, lastHit = 0;
+let joyX = 0, joyY = 0, yaw = 0, lastTX = 0;
+let currentHero = "", heroColor = 0;
+const enemies = [], particles = [];
 const clock = new THREE.Clock();
 
-/** --- СИСТЕМА ВЫБОРА --- **/
-const heroes = {
-    'btn-RedShadow': { name: 'RedShadow', color: 0xff0000 },
-    'btn-MrFlicer': { name: 'MrFlicer', color: 0x5d4037 },
-    'btn-Joper546': { name: 'Joper546', color: 0x0000ff },
-    'btn-Dobrikotikleast': { name: 'Dobrikotikleast', color: 0xffff00 }
+/** --- ВЫБОР И ГЕРОИ --- **/
+const heroData = {
+    'hero-RedShadow': { n: 'RedShadow', c: 0xff0000 },
+    'hero-MrFlicer': { n: 'MrFlicer', c: 0x5d4037 },
+    'hero-Joper546': { n: 'Joper546', c: 0x0000ff },
+    'hero-Dobrikotikleast': { n: 'Dobrikotikleast', c: 0xffff00 }
 };
 
-Object.keys(heroes).forEach(id => {
-    document.getElementById(id).addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        initGame(heroes[id].name, heroes[id].color);
-    });
-    // Для теста на ПК
-    document.getElementById(id).addEventListener('click', () => {
-        initGame(heroes[id].name, heroes[id].color);
-    });
+Object.keys(heroData).forEach(id => {
+    const el = document.getElementById(id);
+    const start = (e) => { e.preventDefault(); initGame(heroData[id].n, heroData[id].c); };
+    el.addEventListener('touchstart', start);
+    el.addEventListener('click', start);
 });
 
-/** --- ЗАПУСК ИГРЫ --- **/
+/** --- СОХРАНЕНИЯ --- **/
+function toggleSaveMenu(s) {
+    document.getElementById('save-menu').style.display = s ? 'flex' : 'none';
+    if(s) renderSlots();
+}
+
+function save(slot) {
+    const data = { hp: playerHP, coins: coins, hero: currentHero, color: heroColor, time: new Date().toLocaleTimeString() };
+    localStorage.setItem('game_slot_'+slot, JSON.stringify(data));
+    renderSlots();
+}
+
+function load(slot) {
+    const data = JSON.parse(localStorage.getItem('game_slot_'+slot));
+    if(data) {
+        if(!scene) initGame(data.hero, data.color);
+        playerHP = data.hp; coins = data.coins;
+        document.getElementById('coin-txt').innerText = coins;
+        toggleSaveMenu(false);
+    }
+}
+
+function renderSlots() {
+    const container = document.getElementById('slots-list');
+    container.innerHTML = '';
+    for(let i=1; i<=4; i++) {
+        const d = JSON.parse(localStorage.getItem('game_slot_'+i));
+        container.innerHTML += `<div class="slot-box">
+            <b>СЛОТ ${i}</b><br><small>${d ? d.hero+' | 💎'+d.coins+' | '+d.time : 'Пусто'}</small><br>
+            <button onclick="save(${i})">Save</button> ${d ? `<button onclick="load(${i})">Load</button>` : ''}
+        </div>`;
+    }
+}
+
+/** --- ИГРА --- **/
 function initGame(name, color) {
+    currentHero = name; heroColor = color;
     document.getElementById('char-select').style.display = 'none';
     document.getElementById('gui').style.display = 'block';
     document.getElementById('controls').style.display = 'block';
-    document.getElementById('display-name').innerText = name;
+    document.getElementById('slots-btn').style.display = 'block';
+    document.getElementById('p-name').innerText = name;
 
-    // 1. Создаем сцену
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB);
-    scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
-
     camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer = new THREE.WebGLRenderer({ antialias: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
     document.body.appendChild(renderer.domElement);
 
-    // 2. Свет и земля
-    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({color: 0x27ae60}));
     ground.rotation.x = -Math.PI/2;
     scene.add(ground);
 
-    // 3. Игрок
     player = new THREE.Group();
-    playerMesh = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.4, 0.6), new THREE.MeshStandardMaterial({color: color}));
-    playerMesh.position.y = 0.7;
-    player.add(playerMesh);
+    pMesh = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.4, 0.6), new THREE.MeshStandardMaterial({color: color}));
+    pMesh.position.y = 0.7;
+    player.add(pMesh);
     scene.add(player);
 
-    // 4. Враги
     for(let i=0; i<5; i++) spawnEnemy();
-
-    // 5. Запуск цикла
     animate();
 }
 
 function spawnEnemy() {
-    const e = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.4, 0.8), new THREE.MeshStandardMaterial({color: 0x2c3e50}));
+    const e = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.4, 0.8), new THREE.MeshStandardMaterial({color: 0x333333}));
     e.position.set(Math.random()*40-20, 0.7, Math.random()*40-20);
     e.userData = { hp: 30 };
     enemies.push(e);
     scene.add(e);
 }
 
+function spawnBoss() {
+    document.getElementById('boss-hud').style.display = 'block';
+    boss = new THREE.Mesh(new THREE.BoxGeometry(4, 6, 4), new THREE.MeshStandardMaterial({color: 0x9b59b6}));
+    boss.position.set(0, 3, -30);
+    boss.userData = { hp: 500, maxHp: 500 };
+    scene.add(boss);
+}
+
+function spawnRegenParticle() {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.2), new THREE.MeshBasicMaterial({color: 0x00ff44, transparent: true}));
+    p.position.set(player.position.x + (Math.random()-0.5), 1, player.position.z + (Math.random()-0.5));
+    p.userData = { l: 1.0 };
+    particles.push(p);
+    scene.add(p);
+}
+
 /** --- УПРАВЛЕНИЕ --- **/
-window.addEventListener('touchmove', (e) => {
+window.addEventListener('touchstart', e => { for(let t of e.touches) if(t.clientX > window.innerWidth/2) lastTX = t.clientX; });
+window.addEventListener('touchmove', e => {
+    e.preventDefault();
     for(let t of e.touches) {
         if(t.clientX < window.innerWidth/2) {
-            const rect = document.getElementById('joystick-zone').getBoundingClientRect();
-            const dx = t.clientX - (rect.left + 50);
-            const dy = t.clientY - (rect.top + 50);
-            const dist = Math.min(Math.hypot(dx, dy), 40);
-            const ang = Math.atan2(dy, dx);
-            joyX = Math.cos(ang)*(dist/40);
-            joyY = Math.sin(ang)*(dist/40);
-            document.getElementById('stick').style.transform = `translate(${Math.cos(ang)*dist}px, ${Math.sin(ang)*dist}px)`;
+            const r = document.getElementById('joystick').getBoundingClientRect();
+            const dx = t.clientX - (r.left + 50), dy = t.clientY - (r.top + 50);
+            const d = Math.min(Math.hypot(dx, dy), 40);
+            const a = Math.atan2(dy, dx);
+            joyX = Math.cos(a)*(d/40); joyY = Math.sin(a)*(d/40);
+            document.getElementById('stick').style.transform = `translate(${Math.cos(a)*d}px, ${Math.sin(a)*d}px)`;
         } else {
-            yaw -= (t.clientX - lastTouchX) * 0.007;
-            lastTouchX = t.clientX;
+            yaw -= (t.clientX - lastTX) * 0.008; lastTX = t.clientX;
         }
     }
 }, {passive: false});
+window.addEventListener('touchend', () => { joyX = joyY = 0; document.getElementById('stick').style.transform = 'translate(0,0)'; });
 
-window.addEventListener('touchstart', (e) => {
-    for(let t of e.touches) if(t.clientX > window.innerWidth/2) lastTouchX = t.clientX;
-});
-
-window.addEventListener('touchend', () => { joyX = 0; joyY = 0; document.getElementById('stick').style.transform = 'translate(0,0)'; });
-
-document.getElementById('attack-btn').addEventListener('touchstart', (e) => {
+document.getElementById('attack-btn').addEventListener('touchstart', e => {
     e.preventDefault();
     enemies.forEach((en, i) => {
         if(player.position.distanceTo(en.position) < 4) {
             en.userData.hp -= 15;
             if(en.userData.hp <= 0) {
                 scene.remove(en); enemies.splice(i,1);
-                coins += 5; document.getElementById('coin-count').innerText = coins;
+                coins += 5; document.getElementById('coin-txt').innerText = coins;
+                if(coins >= 50 && !boss) spawnBoss();
                 setTimeout(spawnEnemy, 2000);
             }
         }
     });
+    if(boss && player.position.distanceTo(boss.position) < 8) {
+        boss.userData.hp -= 10;
+        document.getElementById('boss-hp-fill').style.width = (boss.userData.hp/boss.userData.maxHp*100) + "%";
+        if(boss.userData.hp <= 0) { alert("ПОБЕДА НАД ИЛОНОМ!"); location.reload(); }
+    }
 });
 
-/** --- ЦИКЛ ОБНОВЛЕНИЯ --- **/
+/** --- ЦИКЛ --- **/
 function animate() {
     requestAnimationFrame(animate);
     const dt = clock.getDelta();
+    const now = Date.now();
 
-    // Движение игрока
     if(Math.abs(joyX)>0.1 || Math.abs(joyY)>0.1) {
         const move = new THREE.Vector3(joyX, 0, joyY);
         move.applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
@@ -188,28 +239,35 @@ function animate() {
         player.rotation.y = yaw + Math.atan2(-joyX, -joyY);
     }
 
-    // Логика врагов
+    // Регенерация
+    if(now - lastHit > 3000 && playerHP < maxHP) {
+        playerHP += 5 * dt; if(playerHP > maxHP) playerHP = maxHP;
+        document.getElementById('regen-text').style.display = 'block';
+        if(Math.random() > 0.8) spawnRegenParticle();
+    } else { document.getElementById('regen-text').style.display = 'none'; }
+    document.getElementById('hp-fill').style.width = playerHP + "%";
+
+    // Частицы
+    for(let i=particles.length-1; i>=0; i--) {
+        particles[i].position.y += dt; particles[i].userData.l -= dt;
+        particles[i].material.opacity = particles[i].userData.l;
+        if(particles[i].userData.l <= 0) { scene.remove(particles[i]); particles.splice(i, 1); }
+    }
+
+    // Враги
     enemies.forEach(e => {
         const d = player.position.distanceTo(e.position);
         if(d < 15) {
             e.lookAt(player.position.x, 0.7, player.position.z);
             e.position.addScaledVector(new THREE.Vector3().subVectors(player.position, e.position).normalize(), 3.5 * dt);
-            if(d < 1.5) {
-                playerHP -= 10*dt;
-                document.getElementById('hp-fill').style.width = Math.max(0, playerHP) + "%";
-                if(playerHP <= 0) location.reload();
-            }
+            if(d < 1.5) { playerHP -= 10*dt; lastHit = now; if(playerHP <= 0) location.reload(); }
         }
     });
 
-    // Позиция камеры (следует за игроком)
-    camera.position.set(
-        player.position.x + Math.sin(yaw)*9, 
-        player.position.y+5, 
-        player.position.z + Math.cos(yaw)*9
-    );
-    camera.lookAt(player.position.x, player.position.y+1, player.position.z);
+    if(boss) boss.lookAt(player.position.x, 3, player.position.z);
 
+    camera.position.set(player.position.x + Math.sin(yaw)*9, player.position.y+5, player.position.z + Math.cos(yaw)*9);
+    camera.lookAt(player.position.x, player.position.y+1, player.position.z);
     renderer.render(scene, camera);
 }
 </script>
