@@ -2,38 +2,48 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Roblox Mobile - No Reset Edition</title>
+    <title>Roblox Mobile - Final Fix</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body { margin: 0; overflow: hidden; background: #2c3e50; font-family: sans-serif; touch-action: none; }
+        body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: sans-serif; touch-action: none; }
         
-        /* Экран выбора */
-        #char-select { position: fixed; inset: 0; background: radial-gradient(circle, #1a2a6c, #000); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; }
-        .char-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .char-btn { padding: 20px; border-radius: 15px; border: 3px solid white; font-weight: bold; cursor: pointer; text-align: center; width: 130px; }
+        /* Экран выбора - теперь максимально простой и надежный */
+        #char-select { 
+            position: fixed; inset: 0; 
+            background: #2c3e50; 
+            display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; 
+            z-index: 10000; color: white; 
+        }
+        .char-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .char-btn { 
+            padding: 30px 20px; border-radius: 15px; border: 4px solid white; 
+            font-weight: bold; cursor: pointer; text-align: center; width: 140px;
+            font-size: 18px; pointer-events: auto;
+        }
         .red { background: #e74c3c; } .brown { background: #795548; }
         .blue { background: #3498db; } .yellow { background: #f1c40f; color: black; }
 
         /* Игровой интерфейс */
-        #gui { position: fixed; top: 10px; left: 10px; z-index: 100; display: none; color: white; pointer-events: none; }
-        .hud-card { background: rgba(0,0,0,0.6); padding: 12px; border-radius: 12px; backdrop-filter: blur(5px); }
+        #gui, #controls, #slots-btn { display: none; }
+        #gui { position: fixed; top: 10px; left: 10px; z-index: 100; color: white; pointer-events: none; }
+        .hud-card { background: rgba(0,0,0,0.6); padding: 12px; border-radius: 12px; }
         .hp-bar { width: 160px; height: 12px; background: #222; border-radius: 6px; margin: 5px 0; overflow: hidden; }
         #hp-fill { width: 100%; height: 100%; background: #2ecc71; transition: 0.3s; }
         
-        /* Экраны состояний (Смерть и Победа) */
-        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; color: white; pointer-events: none; opacity: 0; transition: opacity 0.5s; }
-        #overlay h1 { font-size: 50px; text-shadow: 0 0 20px red; margin: 0; }
+        #overlay { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); 
+            display: none; flex-direction: column; align-items: center; 
+            justify-content: center; z-index: 2000; color: white; 
+            opacity: 0; transition: opacity 0.5s; pointer-events: none;
+        }
 
-        #slots-btn { position: fixed; top: 10px; right: 10px; z-index: 101; padding: 10px; background: rgba(0,0,0,0.7); color: white; border: 1px solid white; border-radius: 8px; display: none; }
-        #save-menu { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2500; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .slot-box { background: #333; margin: 5px; padding: 10px; border-radius: 8px; width: 260px; border: 1px solid #555; }
-
+        #slots-btn { position: fixed; top: 10px; right: 10px; z-index: 101; padding: 10px; background: #000; color: white; border: 1px solid white; border-radius: 8px; }
+        
         /* Управление */
-        #controls { position: fixed; inset: 0; display: none; z-index: 50; pointer-events: none; }
-        #joystick { position: absolute; bottom: 50px; left: 50px; width: 100px; height: 100px; border: 2px solid white; border-radius: 50%; pointer-events: auto; }
+        #joystick { position: fixed; bottom: 50px; left: 50px; width: 100px; height: 100px; border: 2px solid white; border-radius: 50%; z-index: 50; }
         #stick { position: absolute; top: 25px; left: 25px; width: 50px; height: 50px; background: white; border-radius: 50%; opacity: 0.7; }
-        #attack-btn { position: absolute; bottom: 60px; right: 50px; width: 80px; height: 80px; background: rgba(231,76,60,0.8); border: 4px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; pointer-events: auto; }
-        #boss-hud { position: fixed; top: 80px; left: 10px; display: none; }
+        #attack-btn { position: fixed; bottom: 60px; right: 50px; width: 80px; height: 80px; background: #e74c3c; border: 4px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; z-index: 50; color: white; }
     </style>
 </head>
 <body>
@@ -41,16 +51,16 @@
 <div id="char-select">
     <h1>ВЫБЕРИ ГЕРОЯ</h1>
     <div class="char-grid">
-        <div class="char-btn red" id="hero-RedShadow">RedShadow</div>
-        <div class="char-btn brown" id="hero-MrFlicer">MrFlicer</div>
-        <div class="char-btn blue" id="hero-Joper546">Joper546</div>
-        <div class="char-btn yellow" id="hero-Dobrikotikleast">Dobrikotikleast</div>
+        <div class="char-btn red" onclick="initGame('RedShadow', 0xff0000)">RedShadow</div>
+        <div class="char-btn brown" onclick="initGame('MrFlicer', 0x5d4037)">MrFlicer</div>
+        <div class="char-btn blue" onclick="initGame('Joper546', 0x0000ff)">Joper546</div>
+        <div class="char-btn yellow" onclick="initGame('Dobrikotikleast', 0xffff00)">Dobrikotikleast</div>
     </div>
 </div>
 
 <div id="overlay">
     <h1 id="overlay-title">GAME OVER</h1>
-    <p id="overlay-sub">Воскрешение через 3 сек...</p>
+    <p id="overlay-sub">Воскрешение...</p>
 </div>
 
 <div id="gui">
@@ -60,99 +70,39 @@
         <div id="regen-text" style="font-size:10px; color:#2ecc71; display:none;">РЕГЕНЕРАЦИЯ...</div>
         <div>💎: <span id="coin-txt">0</span> / 50</div>
     </div>
-    <div id="boss-hud" class="hud-card" style="border-color: #9b59b6;">
-        <b style="color: #9b59b6;">ELON BOSS</b>
-        <div class="hp-bar"><div id="boss-hp-fill" style="background: #9b59b6;"></div></div>
-    </div>
 </div>
 
 <button id="slots-btn" onclick="toggleSaveMenu(true)">💾 СЛОТЫ</button>
 
-<div id="save-menu">
-    <h2>СОХРАНЕНИЯ</h2>
-    <div id="slots-list"></div>
-    <button onclick="toggleSaveMenu(false)" style="margin-top:20px; padding:10px 40px;">ЗАКРЫТЬ</button>
-</div>
-
 <div id="controls">
     <div id="joystick"><div id="stick"></div></div>
-    <div id="attack-btn">⚔️</div>
+    <div id="attack-btn" ontouchstart="handleAttack(event)">⚔️</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <script>
 let scene, camera, renderer, player, pMesh, boss;
-let playerHP = 100, maxHP = 100, coins = 0, lastHit = 0;
+let playerHP = 100, coins = 0, lastHit = 0, isDead = false;
 let joyX = 0, joyY = 0, yaw = 0, lastTX = 0;
-let currentHero = "", heroColor = 0, isDead = false;
-const enemies = [], particles = [];
-const clock = new THREE.Clock();
-
-const heroData = {
-    'hero-RedShadow': { n: 'RedShadow', c: 0xff0000 },
-    'hero-MrFlicer': { n: 'MrFlicer', c: 0x5d4037 },
-    'hero-Joper546': { n: 'Joper546', c: 0x0000ff },
-    'hero-Dobrikotikleast': { n: 'Dobrikotikleast', c: 0xffff00 }
-};
-
-Object.keys(heroData).forEach(id => {
-    const el = document.getElementById(id);
-    const start = (e) => { e.preventDefault(); initGame(heroData[id].n, heroData[id].c); };
-    el.addEventListener('touchstart', start);
-    el.addEventListener('click', start);
-});
-
-function toggleSaveMenu(s) {
-    document.getElementById('save-menu').style.display = s ? 'flex' : 'none';
-    if(s) renderSlots();
-}
-
-function save(slot) {
-    const data = { hp: playerHP, coins: coins, hero: currentHero, color: heroColor, time: new Date().toLocaleTimeString() };
-    localStorage.setItem('game_slot_'+slot, JSON.stringify(data));
-    renderSlots();
-}
-
-function load(slot) {
-    const data = JSON.parse(localStorage.getItem('game_slot_'+slot));
-    if(data) {
-        if(!scene) initGame(data.hero, data.color);
-        else {
-            currentHero = data.hero; heroColor = data.color;
-            pMesh.material.color.setHex(data.color);
-            document.getElementById('p-name').innerText = data.hero;
-        }
-        playerHP = data.hp; coins = data.coins;
-        document.getElementById('coin-txt').innerText = coins;
-        toggleSaveMenu(false);
-    }
-}
-
-function renderSlots() {
-    const container = document.getElementById('slots-list');
-    container.innerHTML = '';
-    for(let i=1; i<=4; i++) {
-        const d = JSON.parse(localStorage.getItem('game_slot_'+i));
-        container.innerHTML += `<div class="slot-box">
-            <b>СЛОТ ${i}</b><br><small>${d ? d.hero+' | 💎'+d.coins+' | '+d.time : 'Пусто'}</small><br>
-            <button onclick="save(${i})">Save</button> ${d ? `<button onclick="load(${i})">Load</button>` : ''}
-        </div>`;
-    }
-}
+let currentHero = "", heroColor = 0;
+const enemies = [], clock = new THREE.Clock();
 
 function initGame(name, color) {
     currentHero = name; heroColor = color;
+    
+    // Скрываем меню и показываем игру
     document.getElementById('char-select').style.display = 'none';
     document.getElementById('gui').style.display = 'block';
     document.getElementById('controls').style.display = 'block';
     document.getElementById('slots-btn').style.display = 'block';
     document.getElementById('p-name').innerText = name;
 
+    // Инициализация Three.js
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB);
     camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-    renderer = new THREE.WebGLRenderer({ antialias: false });
+    renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
@@ -179,41 +129,28 @@ function spawnEnemy() {
     scene.add(e);
 }
 
-function spawnBoss() {
-    document.getElementById('boss-hud').style.display = 'block';
-    boss = new THREE.Mesh(new THREE.BoxGeometry(4, 6, 4), new THREE.MeshStandardMaterial({color: 0x9b59b6}));
-    boss.position.set(0, 3, -30);
-    boss.userData = { hp: 500, maxHp: 500 };
-    scene.add(boss);
-}
-
-function showOverlay(title, sub, color) {
-    const ov = document.getElementById('overlay');
-    document.getElementById('overlay-title').innerText = title;
-    document.getElementById('overlay-title').style.textShadow = `0 0 20px ${color}`;
-    document.getElementById('overlay-sub').innerText = sub;
-    ov.style.display = 'flex';
-    setTimeout(() => ov.style.opacity = 1, 10);
-}
-
-function hideOverlay() {
-    const ov = document.getElementById('overlay');
-    ov.style.opacity = 0;
-    setTimeout(() => ov.style.display = 'none', 500);
-}
-
-function respawn() {
-    isDead = false;
-    playerHP = 100;
-    player.position.set(0, 0, 0);
-    hideOverlay();
-}
-
-/** --- УПРАВЛЕНИЕ --- **/
-window.addEventListener('touchstart', e => { for(let t of e.touches) if(t.clientX > window.innerWidth/2) lastTX = t.clientX; });
-window.addEventListener('touchmove', e => {
+function handleAttack(e) {
+    if(e) e.preventDefault();
     if(isDead) return;
-    e.preventDefault();
+    enemies.forEach((en, i) => {
+        if(player.position.distanceTo(en.position) < 4) {
+            en.userData.hp -= 15;
+            if(en.userData.hp <= 0) {
+                scene.remove(en); enemies.splice(i,1);
+                coins += 5; document.getElementById('coin-txt').innerText = coins;
+                setTimeout(spawnEnemy, 2000);
+            }
+        }
+    });
+}
+
+// Управление камерой и джойстиком
+window.addEventListener('touchstart', e => { 
+    for(let t of e.touches) if(t.clientX > window.innerWidth/2) lastTX = t.clientX; 
+});
+
+window.addEventListener('touchmove', e => {
+    if(isDead || !scene) return;
     for(let t of e.touches) {
         if(t.clientX < window.innerWidth/2) {
             const r = document.getElementById('joystick').getBoundingClientRect();
@@ -227,26 +164,29 @@ window.addEventListener('touchmove', e => {
         }
     }
 }, {passive: false});
-window.addEventListener('touchend', () => { joyX = joyY = 0; document.getElementById('stick').style.transform = 'translate(0,0)'; });
 
-document.getElementById('attack-btn').addEventListener('touchstart', e => {
-    if(isDead) return;
-    e.preventDefault();
-    enemies.forEach((en, i) => {
-        if(player.position.distanceTo(en.position) < 4) {
-            en.userData.hp -= 15;
-            if(en.userData.hp <= 0) {
-                scene.remove(en); enemies.splice(i,1);
-                coins += 5; document.getElementById('coin-txt').innerText = coins;
-                if(coins >= 50 && !boss) spawnBoss();
-                setTimeout(spawnEnemy, 2000);
-            }
+window.addEventListener('touchend', () => { joyX = 0; joyY = 0; document.getElementById('stick').style.transform = 'translate(0,0)'; });
+
+function animate() {
+    requestAnimationFrame(animate);
+    const dt = clock.getDelta();
+    const now = Date.now();
+
+    if(!isDead) {
+        // Движение
+        if(Math.abs(joyX)>0.1 || Math.abs(joyY)>0.1) {
+            const move = new THREE.Vector3(joyX, 0, joyY);
+            move.applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
+            player.position.addScaledVector(move, 8 * dt);
+            player.rotation.y = yaw + Math.atan2(-joyX, -joyY);
         }
-    });
-    if(boss && player.position.distanceTo(boss.position) < 8) {
-        boss.userData.hp -= 10;
-        document.getElementById('boss-hp-fill').style.width = (boss.userData.hp/boss.userData.maxHp*100) + "%";
-        if(boss.userData.hp <= 0) { 
-            scene.remove(boss); boss = null;
-            document.getElementById('boss-hud').style.display = 'none';
-            showOverlay("VICTORY!", "Босс повержен!
+
+        // Регенерация
+        if(now - lastHit > 3000 && playerHP < 100) {
+            playerHP += 5 * dt;
+            document.getElementById('regen-text').style.display = 'block';
+        } else { document.getElementById('regen-text').style.display = 'none'; }
+
+        // Враги
+        enemies.forEach(e => {
+            const d = player
