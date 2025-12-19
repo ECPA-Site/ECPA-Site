@@ -2,46 +2,33 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Mega Roblox 3D - Full Version</title>
+    <title>Roblox 3D - Pro Version</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        body { margin:0; overflow:hidden; background:#000; touch-action:none; font-family: 'Segoe UI', sans-serif; }
+        body { margin:0; overflow:hidden; background:#000; touch-action:none; font-family: sans-serif; }
+        #ui { position: fixed; top: 20px; left: 20px; color: white; pointer-events: none; text-shadow: 2px 2px 2px #000; }
+        #inventory { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; margin-top: 10px; }
         
-        /* Интерфейс HP и Инвентаря */
-        #ui-container { position: fixed; top: 20px; left: 20px; color: white; pointer-events: none; }
-        #hp-bar { font-size: 24px; font-weight: bold; margin-bottom: 10px; text-shadow: 2px 2px 4px #000; }
-        #inventory { background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2); }
+        #joystick { position:fixed; left:30px; bottom:30px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.1); border:2px solid white; }
+        #stick { position:absolute; left:35px; top:35px; width:50px; height:50px; border-radius:50%; background:white; }
         
-        /* Кнопки управления */
-        #joystick { position:fixed; left:30px; bottom:30px; width:130px; height:130px; border-radius:50%; background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.3); }
-        #stick { position:absolute; left:40px; top:40px; width:50px; height:50px; border-radius:50%; background:white; opacity: 0.8; }
-        .btn { position:fixed; right:30px; width:75px; height:75px; border-radius:50%; font-size:28px; border:none; background:rgba(255,255,255,0.2); color:white; backdrop-filter: blur(5px); cursor: pointer; }
-        #jump { bottom:125px; }
-        #attack { bottom:30px; background: rgba(255, 68, 68, 0.4); }
+        .btn { position:fixed; right:30px; width:70px; height:70px; border-radius:50%; font-size:25px; border:none; background:rgba(255,255,255,0.2); color:white; }
+        #jump { bottom:120px; }
+        #attack { bottom:30px; background: rgba(255,0,0,0.3); }
 
-        /* Экран Смерти */
-        #death-screen { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(139, 0, 0, 0.8); display: none; flex-direction: column; 
-            align-items: center; justify-content: center; color: white; z-index: 100; 
-        }
-        #death-screen h1 { font-size: 48px; margin-bottom: 20px; }
-        #restart-btn { padding: 15px 40px; font-size: 20px; cursor: pointer; background: white; border: none; border-radius: 30px; }
+        #death { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,0,0,0.6); display:none; flex-direction:column; align-items:center; justify-content:center; color:white; z-index:10; }
     </style>
 </head>
 <body>
 
-<div id="ui-container">
-    <div id="hp-bar">❤️ HP: <span id="hp-val">100</span></div>
-    <div id="inventory">
-        <b>Рюкзак:</b>
-        <div id="inv-list">Пусто</div>
-    </div>
+<div id="ui">
+    <div style="font-size:24px;">❤️ HP: <span id="hp">100</span></div>
+    <div id="inventory"><b>Инвентарь:</b><div id="inv-items">Пусто</div></div>
 </div>
 
-<div id="death-screen">
-    <h1>ТЫ ПОГИБ</h1>
-    <button id="restart-btn" onclick="location.reload()">ВОЗРОДИТЬСЯ</button>
+<div id="death">
+    <h1>ВЫ ПОГИБЛИ</h1>
+    <button onclick="location.reload()" style="padding:10px 20px;">ВОЗРОДИТЬСЯ</button>
 </div>
 
 <div id="joystick"><div id="stick"></div></div>
@@ -52,191 +39,175 @@
 
 <script>
 // === ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ===
-let playerHP = 100;
-let isDead = false;
-let inventory = {};
-const enemies = [];
-const lootItems = [];
+let playerHP = 100, isDead = false;
+let inv = {};
+const enemies = [], lootItems = [];
 const keys = {};
-let joyX = 0, joyY = 0;
-let camAngle = 0;
-let velY = 0;
-let onGround = true;
-let lastHitTime = 0;
+let camYaw = 0, camPitch = 0.5; // Yaw - лево/право, Pitch - верх/вниз
 
 // === СЦЕНА ===
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb);
-scene.fog = new THREE.Fog(0x87ceeb, 15, 60);
+scene.background = new THREE.Color(0x4488ff);
+scene.fog = new THREE.Fog(0x4488ff, 20, 70);
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
 const clock = new THREE.Clock();
 
 // === СВЕТ ===
-scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-const sun = new THREE.DirectionalLight(0xffffff, 1);
-sun.position.set(10, 25, 15);
+scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+sun.position.set(5, 20, 10);
 scene.add(sun);
 
-// === МИР ===
-const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(200, 200),
-    new THREE.MeshStandardMaterial({ color: 0x27ae60 })
-);
+// === ТРАВА С УЗОРОМ (GRID) ===
+const groundSize = 200;
+const groundGeo = new THREE.PlaneGeometry(groundSize, groundSize);
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x22aa44 });
+const ground = new THREE.Mesh(groundGeo, groundMat);
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
+// Добавляем сетку (узоры на траве)
+const grid = new THREE.GridHelper(groundSize, 100, 0x000000, 0x116622);
+grid.position.y = 0.01;
+scene.add(grid);
+
 // === ИГРОК ===
-const player = new THREE.Group();
-const playerBody = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshStandardMaterial({ color: 0xff4444 }));
-player.add(playerBody);
+const player = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshStandardMaterial({color:0xee3333}));
 player.position.y = 1;
 scene.add(player);
 
-// === ФУНКЦИИ СПАВНА ===
-function spawnEnemy(x, z, hp = 30, scale = 1, color = 0x3333ff) {
-    const e = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshStandardMaterial({ color }));
-    e.position.set(x, scale, z);
-    e.scale.set(scale, scale, scale);
-    e.hp = hp;
+// === МОНСТРЫ И РЕСПАУН ===
+function createEnemy() {
+    const size = Math.random() > 0.8 ? 2 : 1; // 20% шанс на крупного моба
+    const e = new THREE.Mesh(
+        new THREE.BoxGeometry(1, 2, 1),
+        new THREE.MeshStandardMaterial({color: size > 1 ? 0x330000 : 0x0000ff})
+    );
+    e.scale.set(size, size, size);
+    e.hp = size * 40;
+    // Случайная позиция в радиусе 20м от центра
+    e.position.set(Math.random()*40-20, size, Math.random()*40-20);
     enemies.push(e);
     scene.add(e);
 }
 
-function spawnLoot(x, z, name) {
-    const geo = new THREE.OctahedronGeometry(0.4, 0);
-    const mat = new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0xffaa00, emissiveIntensity: 0.5 });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(x, 0.8, z);
-    mesh.itemName = name;
-    scene.add(mesh);
-    lootItems.push(mesh);
-}
-
-// Начальный спавн
-spawnEnemy(8, 8);
-spawnEnemy(-10, 5);
-spawnEnemy(0, 15, 150, 2.5, 0x111111); // Босс
+// Начальные 5 монстров
+for(let i=0; i<5; i++) createEnemy();
 
 // === ИНВЕНТАРЬ ===
-function addToInventory(name) {
-    inventory[name] = (inventory[name] || 0) + 1;
-    const list = document.getElementById("inv-list");
-    list.innerHTML = Object.keys(inventory).map(k => `<div>${k}: x${inventory[k]}</div>`).join('');
+function addInv(item) {
+    inv[item] = (inv[item] || 0) + 1;
+    document.getElementById("inv-items").innerHTML = Object.entries(inv).map(([k,v])=>`<div>${k}: ${v}</div>`).join('');
 }
 
-// === УПРАВЛЕНИЕ ===
+// === УПРАВЛЕНИЕ КАМЕРОЙ И ПЕРЕМЕЩЕНИЕМ ===
 window.addEventListener("keydown", e => keys[e.code] = true);
 window.addEventListener("keyup", e => keys[e.code] = false);
 
-// Мышь/Тач камеры
-let isDragging = false, lastX = 0;
-window.addEventListener("mousedown", e => { isDragging = true; lastX = e.clientX; });
-window.addEventListener("mouseup", () => isDragging = false);
-window.addEventListener("mousemove", e => { if(isDragging) { camAngle -= (e.clientX - lastX) * 0.007; lastX = e.clientX; } });
+// Вращение камеры (Мышь и Тач)
+let isMovingCam = false;
+const handleCamMove = (dx, dy) => {
+    camYaw -= dx * 0.005;
+    camPitch = Math.max(0.1, Math.min(1.4, camPitch + dy * 0.005));
+};
+
+window.addEventListener("mousedown", () => isMovingCam = true);
+window.addEventListener("mouseup", () => isMovingCam = false);
+window.addEventListener("mousemove", e => { if(isMovingCam) handleCamMove(e.movementX, e.movementY); });
+
+window.addEventListener("touchmove", e => {
+    if(e.touches.length > 0 && e.target.tagName !== "BUTTON") {
+        const touch = e.touches[0];
+        if(touch.clientX > window.innerWidth / 2) { // Вращение только правой частью экрана
+            handleCamMove(0, 0); // Упрощенно для мобилок можно добавить расчет через разницу координат
+        }
+    }
+}, {passive: false});
 
 // Джойстик
+let joyX=0, joyY=0;
 const joy = document.getElementById("joystick");
 const stick = document.getElementById("stick");
-function moveJoy(e) {
-    e.preventDefault();
-    const touch = e.touches[0];
+joy.addEventListener("touchmove", e => {
     const r = joy.getBoundingClientRect();
-    const x = touch.clientX - r.left - 65;
-    const y = touch.clientY - r.top - 65;
-    const d = Math.min(40, Math.hypot(x, y));
-    const a = Math.atan2(y, x);
-    joyX = Math.cos(a) * (d / 40);
-    joyY = Math.sin(a) * (d / 40);
+    const x = e.touches[0].clientX - r.left - 60;
+    const y = e.touches[0].clientY - r.top - 60;
+    const d = Math.min(40, Math.hypot(x,y));
+    const a = Math.atan2(y,x);
+    joyX = Math.cos(a)*(d/40); joyY = Math.sin(a)*(d/40);
     stick.style.transform = `translate(${Math.cos(a)*d}px, ${Math.sin(a)*d}px)`;
-}
-joy.addEventListener("touchstart", moveJoy);
-joy.addEventListener("touchmove", moveJoy);
-joy.addEventListener("touchend", () => { joyX = joyY = 0; stick.style.transform = "translate(0,0)"; });
+});
+joy.addEventListener("touchend", () => { joyX=joyY=0; stick.style.transform = "none"; });
 
-// Кнопки
-document.getElementById("jump").onclick = () => { if(onGround && !isDead) { velY = 0.25; onGround = false; } };
-document.getElementById("attack").onclick = () => { if(!isDead) attack(); };
-
-function attack() {
+// === БИТВА ===
+document.getElementById("attack").onclick = () => {
     enemies.forEach((e, i) => {
-        if (player.position.distanceTo(e.position) < 3.5) {
+        if(player.position.distanceTo(e.position) < 4) {
             e.hp -= 20;
-            e.material.color.set(0xffffff);
-            setTimeout(() => e.material.color.set(e.hp < 50 ? 0xff0000 : 0x3333ff), 100);
-            if (e.hp <= 0) {
-                spawnLoot(e.position.x, e.position.z, "Золото");
+            e.position.addScaledVector(new THREE.Vector3().subVectors(e.position, player.position).normalize(), 1);
+            if(e.hp <= 0) {
+                addInv("Монета");
                 scene.remove(e);
                 enemies.splice(i, 1);
+                setTimeout(createEnemy, 5000); // Респаун через 5 сек
             }
         }
     });
-}
+};
 
-// === ЦИКЛ ОБНОВЛЕНИЯ ===
+let velY = 0, onGround = true;
+document.getElementById("jump").onclick = () => { if(onGround) { velY = 0.2; onGround = false; }};
+
+// === ГЛАВНЫЙ ЦИКЛ ===
 function update() {
-    if (isDead) return;
-
-    const delta = clock.getDelta();
-    const speed = 7 * delta;
+    if(isDead) return;
+    const dt = clock.getDelta();
+    const speed = 8 * dt;
 
     // Движение относительно камеры
-    const forward = new THREE.Vector3(Math.sin(camAngle), 0, Math.cos(camAngle));
-    const right = new THREE.Vector3(Math.sin(camAngle + Math.PI/2), 0, Math.cos(camAngle + Math.PI/2));
+    const forward = new THREE.Vector3(Math.sin(camYaw), 0, Math.cos(camYaw));
+    const right = new THREE.Vector3(Math.sin(camYaw + Math.PI/2), 0, Math.cos(camYaw + Math.PI/2));
 
-    if (keys["KeyW"]) player.position.addScaledVector(forward, -speed);
-    if (keys["KeyS"]) player.position.addScaledVector(forward, speed);
-    if (keys["KeyA"]) player.position.addScaledVector(right, -speed);
-    if (keys["KeyD"]) player.position.addScaledVector(right, speed);
+    if(keys["KeyW"]) player.position.addScaledVector(forward, -speed);
+    if(keys["KeyS"]) player.position.addScaledVector(forward, speed);
+    if(keys["KeyA"]) player.position.addScaledVector(right, -speed);
+    if(keys["KeyD"]) player.position.addScaledVector(right, speed);
     
     player.position.addScaledVector(forward, -joyY * speed);
     player.position.addScaledVector(right, joyX * speed);
 
-    // Гравитация
-    velY -= 0.6 * delta;
+    // Физика
+    velY -= 0.5 * dt;
     player.position.y += velY;
-    if (player.position.y <= 1) { player.position.y = 1; velY = 0; onGround = true; }
+    if(player.position.y <= 1) { player.position.y = 1; velY = 0; onGround = true; }
 
     // Враги
     enemies.forEach(e => {
-        const dist = player.position.distanceTo(e.position);
-        if (dist < 15) {
+        const d = player.position.distanceTo(e.position);
+        if(d < 12) {
             e.lookAt(player.position.x, e.position.y, player.position.z);
-            const dir = new THREE.Vector3().subVectors(player.position, e.position).normalize();
-            e.position.addScaledVector(dir, 2.5 * delta);
-
-            if (dist < 1.5 && performance.now() - lastHitTime > 800) {
-                playerHP -= 15;
-                lastHitTime = performance.now();
-                document.getElementById("hp-val").textContent = Math.max(0, playerHP);
-                if (playerHP <= 0) die();
+            e.position.addScaledVector(new THREE.Vector3().subVectors(player.position, e.position).normalize(), 3 * dt);
+            if(d < 1.5) {
+                playerHP -= 10 * dt;
+                document.getElementById("hp").innerText = Math.ceil(playerHP);
+                if(playerHP <= 0) { isDead = true; document.getElementById("death").style.display="flex"; }
             }
         }
     });
 
-    // Лут
-    lootItems.forEach((item, i) => {
-        item.rotation.y += 0.04;
-        if (player.position.distanceTo(item.position) < 1.5) {
-            addToInventory(item.itemName);
-            scene.remove(item);
-            lootItems.splice(i, 1);
-        }
-    });
-
-    // Камера
-    camera.position.set(player.position.x + Math.sin(camAngle)*10, player.position.y + 6, player.position.z + Math.cos(camAngle)*10);
-    camera.lookAt(player.position);
-}
-
-function die() {
-    isDead = true;
-    document.getElementById("death-screen").style.display = "flex";
+    // Камера (от третьего лица)
+    const dist = 10;
+    camera.position.set(
+        player.position.x + Math.sin(camYaw) * Math.cos(camPitch) * dist,
+        player.position.y + Math.sin(camPitch) * dist,
+        player.position.z + Math.cos(camYaw) * Math.cos(camPitch) * dist
+    );
+    camera.lookAt(player.position.x, player.position.y + 1, player.position.z);
 }
 
 function animate() {
@@ -244,11 +215,10 @@ function animate() {
     update();
     renderer.render(scene, camera);
 }
-
 animate();
 
 window.onresize = () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.aspect = window.innerWidth/window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 };
