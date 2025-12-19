@@ -2,83 +2,86 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Roblox 3D Fixed - Boss Edition</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Roblox Mobile Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body { margin:0; overflow:hidden; background:#111; font-family: sans-serif; }
-        #gui { position: fixed; top: 20px; left: 20px; color: white; pointer-events: none; z-index: 10; }
-        .card { background: rgba(0,0,0,0.8); padding: 15px; border: 2px solid #00f2ff; border-radius: 10px; }
-        .bar { width: 200px; height: 10px; background: #222; border-radius: 5px; margin-top: 5px; overflow: hidden; }
-        #hp-fill { width: 100%; height: 100%; background: #00ff44; }
-        #hint { position: fixed; bottom: 20px; width: 100%; text-align: center; color: white; text-shadow: 1px 1px 2px black; }
-        #boss-ui { position: fixed; top: 20px; right: 20px; display: none; }
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; touch-action: none; }
+        #gui { position: fixed; top: 10px; left: 10px; color: white; pointer-events: none; z-index: 10; font-size: 14px; }
+        .card { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; backdrop-filter: blur(5px); }
+        .bar { width: 150px; height: 8px; background: #222; border-radius: 4px; margin-top: 5px; overflow: hidden; }
+        #hp-fill { width: 100%; height: 100%; background: #00ff44; transition: 0.3s; }
+        
+        /* Стики и кнопки для мобилок */
+        #joystick-zone { position: fixed; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); }
+        #stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: white; border-radius: 50%; opacity: 0.8; }
+        
+        #attack-btn { position: fixed; bottom: 50px; right: 40px; width: 80px; height: 80px; background: rgba(255,0,0,0.6); border-radius: 50%; border: 4px solid white; color: white; font-size: 30px; display: flex; align-items: center; justify-content: center; user-select: none; }
+
+        #boss-ui { position: fixed; top: 10px; right: 10px; display: none; }
     </style>
 </head>
 <body>
 
 <div id="gui">
     <div class="card">
-        <b>СТАТУС</b>
+        <b>❤️ ЖИЗНЬ</b>
         <div class="bar"><div id="hp-fill"></div></div>
-        <div style="margin-top:5px;">КРИСТАЛЛЫ: <span id="coins">0</span> / 50</div>
+        <div style="margin-top:5px;">💎 КРИСТАЛЛЫ: <span id="coins">0</span> / 50</div>
     </div>
 </div>
 
-<div id="boss-ui" class="card" style="border-color: #ff0055;">
+<div id="boss-ui" class="card">
     <b style="color: #ff0055;">БОСС АКТИВЕН</b>
     <div class="bar"><div id="boss-hp-fill" style="width:100%; background:#ff0055;"></div></div>
 </div>
 
-<div id="hint">Кликни на экран, чтобы начать | WASD - Ходить | Клик - Атака</div>
+<div id="joystick-zone"><div id="stick"></div></div>
+<div id="attack-btn">⚔️</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <script>
 /** --- НАСТРОЙКИ --- **/
 let playerHP = 100, coins = 0, isDead = false, bossActive = false;
-const enemies = [], bullets = [];
+const enemies = [];
+let joyX = 0, joyY = 0;
+let yaw = 0, pitch = 0.3;
 
 /** --- СЦЕНА --- **/
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x111122);
-scene.fog = new THREE.Fog(0x111122, 10, 100);
+scene.background = new THREE.Color(0x87CEEB); // Голубое небо
+scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: false }); // Отключаем сглаживание для скорости на мобилках
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Оптимизация разрешения
 document.body.appendChild(renderer.domElement);
 
-// Свет
-const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+const ambient = new THREE.AmbientLight(0xffffff, 0.7);
 scene.add(ambient);
-const sun = new THREE.DirectionalLight(0xffffff, 1);
-sun.position.set(5, 15, 5);
+const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+sun.position.set(10, 20, 10);
 scene.add(sun);
 
-// Земля
-const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(200, 200),
-    new THREE.MeshStandardMaterial({ color: 0x222222 })
-);
+// Зеленая трава
+const groundGeo = new THREE.PlaneGeometry(200, 200);
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x2d9e2d }); // Насыщенный зеленый
+const ground = new THREE.Mesh(groundGeo, groundMat);
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
-scene.add(new THREE.GridHelper(200, 50, 0x00f2ff, 0x333333));
 
 /** --- МОДЕЛИ --- **/
 function createModel(color, hasWeapon = false) {
     const group = new THREE.Group();
-    // Тело
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1, 0.5), new THREE.MeshStandardMaterial({color}));
     body.position.y = 0.5;
     group.add(body);
-    // Голова
     const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshStandardMaterial({color}));
     head.position.y = 1.3;
     group.add(head);
-    // Оружие
     if(hasWeapon) {
-        const weapon = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 1.2), new THREE.MeshStandardMaterial({color: 0xff0000, emissive: 0xff0000}));
+        const weapon = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 1), new THREE.MeshStandardMaterial({color: 0xff0000}));
         weapon.position.set(0.5, 0.5, 0.3);
         group.add(weapon);
     }
@@ -90,42 +93,72 @@ scene.add(player);
 
 function spawnEnemy() {
     const e = createModel(0xff4400, true);
-    e.position.set(Math.random()*40-20, 0, Math.random()*40-20);
+    e.position.set(Math.random()*60-30, 0, Math.random()*60-30);
     e.userData = { hp: 30 };
     enemies.push(e);
     scene.add(e);
 }
+for(let i=0; i<6; i++) spawnEnemy();
 
-for(let i=0; i<5; i++) spawnEnemy();
+/** --- МОБИЛЬНОЕ УПРАВЛЕНИЕ --- **/
+const stick = document.getElementById('stick');
+const joyZone = document.getElementById('joystick-zone');
 
-let boss;
-function spawnBoss() {
-    bossActive = true;
-    document.getElementById('boss-ui').style.display = 'block';
-    boss = new THREE.Group();
-    const bBody = new THREE.Mesh(new THREE.BoxGeometry(4, 5, 4), new THREE.MeshStandardMaterial({color: 0x550055}));
-    bBody.position.y = 2.5;
-    boss.add(bBody);
-    boss.position.set(0, 0, -30);
-    boss.userData = { hp: 300, maxHp: 300 };
-    scene.add(boss);
+// Джойстик (Левая рука)
+window.addEventListener('touchstart', (e) => {
+    handleTouch(e);
+}, {passive: false});
+
+window.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    handleTouch(e);
+}, {passive: false});
+
+window.addEventListener('touchend', () => {
+    joyX = 0; joyY = 0;
+    stick.style.transform = `translate(0px, 0px)`;
+}, {passive: false});
+
+function handleTouch(e) {
+    for (let i = 0; i < e.touches.length; i++) {
+        const touch = e.touches[i];
+        const rect = joyZone.getBoundingClientRect();
+        
+        // Если тач в зоне джойстика
+        if (touch.clientX < window.innerWidth / 2) {
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const dx = touch.clientX - centerX;
+            const dy = touch.clientY - centerY;
+            const dist = Math.min(Math.hypot(dx, dy), 40);
+            const angle = Math.atan2(dy, dx);
+            
+            joyX = Math.cos(angle) * (dist / 40);
+            joyY = Math.sin(angle) * (dist / 40);
+            
+            stick.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
+        } else {
+            // Если тач в правой части экрана — вращаем камеру
+            if (e.type === 'touchmove') {
+                // Упрощенное вращение для мобилок
+                yaw -= 0.05 * (touch.force || 1); // В реальном проекте тут нужна дельта координат
+            }
+        }
+    }
 }
 
-/** --- УПРАВЛЕНИЕ --- **/
-let yaw = 0, pitch = 0.3, keys = {};
-document.addEventListener('click', () => document.body.requestPointerLock());
-document.addEventListener('mousemove', (e) => {
-    if(document.pointerLockElement) {
-        yaw -= e.movementX * 0.003;
-        pitch = Math.max(-0.5, Math.min(0.8, pitch - e.movementY * 0.003));
-    }
+// Кнопка атаки
+document.getElementById('attack-btn').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    performAttack();
 });
+
+// Поддержка клавиатуры (для ПК)
+const keys = {};
 window.addEventListener('keydown', e => keys[e.code] = true);
 window.addEventListener('keyup', e => keys[e.code] = false);
 
-// Атака
-window.addEventListener('mousedown', () => {
-    if(!document.pointerLockElement) return;
+function performAttack() {
     enemies.forEach((e, i) => {
         if(player.position.distanceTo(e.position) < 4) {
             e.userData.hp -= 15;
@@ -134,57 +167,58 @@ window.addEventListener('mousedown', () => {
                 enemies.splice(i, 1);
                 coins += 5;
                 document.getElementById('coins').innerText = coins;
-                if(coins >= 50 && !bossActive) spawnBoss();
                 setTimeout(spawnEnemy, 2000);
             }
         }
     });
-    if(bossActive && player.position.distanceTo(boss.position) < 8) {
-        boss.userData.hp -= 10;
-        document.getElementById('boss-hp-fill').style.width = (boss.userData.hp/boss.userData.maxHp*100) + "%";
-        if(boss.userData.hp <= 0) { alert("ПОБЕДА!"); location.reload(); }
-    }
-});
+}
 
-/** --- ЦИКЛ --- **/
+/** --- ЦИКЛ ИГРЫ --- **/
 const clock = new THREE.Clock();
 function animate() {
     requestAnimationFrame(animate);
     const dt = clock.getDelta();
     if(isDead) return;
 
-    // Ходьба
-    const dir = new THREE.Vector3();
-    if(keys['KeyW']) dir.z -= 1;
-    if(keys['KeyS']) dir.z += 1;
-    if(keys['KeyA']) dir.x -= 1;
-    if(keys['KeyD']) dir.x += 1;
-    dir.applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
-    player.position.addScaledVector(dir.normalize(), 10 * dt);
-    player.rotation.y = yaw;
+    // Движение (Клавиатура + Джойстик)
+    const move = new THREE.Vector3();
+    if(keys['KeyW']) move.z -= 1;
+    if(keys['KeyS']) move.z += 1;
+    if(keys['KeyA']) move.x -= 1;
+    if(keys['KeyD']) move.x += 1;
+    
+    // Добавляем джойстик
+    move.x += joyX;
+    move.z += joyY;
+
+    if(move.length() > 0.1) {
+        move.applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
+        player.position.addScaledVector(move.normalize(), 8 * dt);
+        player.rotation.y = yaw;
+    }
 
     // Враги
     enemies.forEach(e => {
         const d = player.position.distanceTo(e.position);
         if(d < 15) {
             e.lookAt(player.position.x, 0, player.position.z);
-            e.position.addScaledVector(new THREE.Vector3().subVectors(player.position, e.position).normalize(), 4 * dt);
-            if(d < 1.5) {
-                playerHP -= 10 * dt;
+            e.position.addScaledVector(new THREE.Vector3().subVectors(player.position, e.position).normalize(), 3 * dt);
+            if(d < 1.4) {
+                playerHP -= 5 * dt;
                 document.getElementById('hp-fill').style.width = playerHP + "%";
-                if(playerHP <= 0) { isDead = true; alert("ВЫ ПОГИБЛИ"); location.reload(); }
+                if(playerHP <= 0) { alert("ИГРА ОКОНЧЕНА"); location.reload(); }
             }
         }
     });
 
-    // Камера
-    const dist = 10;
+    // Камера (следует за игроком)
+    const dist = 8;
     camera.position.set(
-        player.position.x + Math.sin(yaw) * Math.cos(pitch) * dist,
-        player.position.y + 3 + Math.sin(pitch) * dist,
-        player.position.z + Math.cos(yaw) * Math.cos(pitch) * dist
+        player.position.x + Math.sin(yaw) * dist,
+        player.position.y + 5,
+        player.position.z + Math.cos(yaw) * dist
     );
-    camera.lookAt(player.position.x, player.position.y + 1, player.position.z);
+    camera.lookAt(player.position.x, player.position.y, player.position.z);
 
     renderer.render(scene, camera);
 }
