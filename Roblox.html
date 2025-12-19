@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Roblox Mobile - Full Version</title>
+    <title>Roblox Mobile - No Reset Edition</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body { margin: 0; overflow: hidden; background: #2c3e50; font-family: sans-serif; touch-action: none; }
@@ -19,13 +19,14 @@
         .hud-card { background: rgba(0,0,0,0.6); padding: 12px; border-radius: 12px; backdrop-filter: blur(5px); }
         .hp-bar { width: 160px; height: 12px; background: #222; border-radius: 6px; margin: 5px 0; overflow: hidden; }
         #hp-fill { width: 100%; height: 100%; background: #2ecc71; transition: 0.3s; }
-        #regen-text { font-size: 10px; color: #2ecc71; display: none; }
+        
+        /* Экраны состояний (Смерть и Победа) */
+        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; color: white; pointer-events: none; opacity: 0; transition: opacity 0.5s; }
+        #overlay h1 { font-size: 50px; text-shadow: 0 0 20px red; margin: 0; }
 
-        /* Меню сохранений */
         #slots-btn { position: fixed; top: 10px; right: 10px; z-index: 101; padding: 10px; background: rgba(0,0,0,0.7); color: white; border: 1px solid white; border-radius: 8px; display: none; }
-        #save-menu { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        #save-menu { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2500; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
         .slot-box { background: #333; margin: 5px; padding: 10px; border-radius: 8px; width: 260px; border: 1px solid #555; }
-        .slot-box button { margin-top: 5px; padding: 5px 10px; }
 
         /* Управление */
         #controls { position: fixed; inset: 0; display: none; z-index: 50; pointer-events: none; }
@@ -47,11 +48,16 @@
     </div>
 </div>
 
+<div id="overlay">
+    <h1 id="overlay-title">GAME OVER</h1>
+    <p id="overlay-sub">Воскрешение через 3 сек...</p>
+</div>
+
 <div id="gui">
     <div class="hud-card">
         <b id="p-name">...</b>
         <div class="hp-bar"><div id="hp-fill"></div></div>
-        <div id="regen-text">РЕГЕНЕРАЦИЯ...</div>
+        <div id="regen-text" style="font-size:10px; color:#2ecc71; display:none;">РЕГЕНЕРАЦИЯ...</div>
         <div>💎: <span id="coin-txt">0</span> / 50</div>
     </div>
     <div id="boss-hud" class="hud-card" style="border-color: #9b59b6;">
@@ -79,11 +85,10 @@
 let scene, camera, renderer, player, pMesh, boss;
 let playerHP = 100, maxHP = 100, coins = 0, lastHit = 0;
 let joyX = 0, joyY = 0, yaw = 0, lastTX = 0;
-let currentHero = "", heroColor = 0;
+let currentHero = "", heroColor = 0, isDead = false;
 const enemies = [], particles = [];
 const clock = new THREE.Clock();
 
-/** --- ВЫБОР И ГЕРОИ --- **/
 const heroData = {
     'hero-RedShadow': { n: 'RedShadow', c: 0xff0000 },
     'hero-MrFlicer': { n: 'MrFlicer', c: 0x5d4037 },
@@ -98,7 +103,6 @@ Object.keys(heroData).forEach(id => {
     el.addEventListener('click', start);
 });
 
-/** --- СОХРАНЕНИЯ --- **/
 function toggleSaveMenu(s) {
     document.getElementById('save-menu').style.display = s ? 'flex' : 'none';
     if(s) renderSlots();
@@ -114,6 +118,11 @@ function load(slot) {
     const data = JSON.parse(localStorage.getItem('game_slot_'+slot));
     if(data) {
         if(!scene) initGame(data.hero, data.color);
+        else {
+            currentHero = data.hero; heroColor = data.color;
+            pMesh.material.color.setHex(data.color);
+            document.getElementById('p-name').innerText = data.hero;
+        }
         playerHP = data.hp; coins = data.coins;
         document.getElementById('coin-txt').innerText = coins;
         toggleSaveMenu(false);
@@ -132,7 +141,6 @@ function renderSlots() {
     }
 }
 
-/** --- ИГРА --- **/
 function initGame(name, color) {
     currentHero = name; heroColor = color;
     document.getElementById('char-select').style.display = 'none';
@@ -165,7 +173,7 @@ function initGame(name, color) {
 
 function spawnEnemy() {
     const e = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.4, 0.8), new THREE.MeshStandardMaterial({color: 0x333333}));
-    e.position.set(Math.random()*40-20, 0.7, Math.random()*40-20);
+    e.position.set(Math.random()*60-30, 0.7, Math.random()*60-30);
     e.userData = { hp: 30 };
     enemies.push(e);
     scene.add(e);
@@ -179,17 +187,32 @@ function spawnBoss() {
     scene.add(boss);
 }
 
-function spawnRegenParticle() {
-    const p = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.2), new THREE.MeshBasicMaterial({color: 0x00ff44, transparent: true}));
-    p.position.set(player.position.x + (Math.random()-0.5), 1, player.position.z + (Math.random()-0.5));
-    p.userData = { l: 1.0 };
-    particles.push(p);
-    scene.add(p);
+function showOverlay(title, sub, color) {
+    const ov = document.getElementById('overlay');
+    document.getElementById('overlay-title').innerText = title;
+    document.getElementById('overlay-title').style.textShadow = `0 0 20px ${color}`;
+    document.getElementById('overlay-sub').innerText = sub;
+    ov.style.display = 'flex';
+    setTimeout(() => ov.style.opacity = 1, 10);
+}
+
+function hideOverlay() {
+    const ov = document.getElementById('overlay');
+    ov.style.opacity = 0;
+    setTimeout(() => ov.style.display = 'none', 500);
+}
+
+function respawn() {
+    isDead = false;
+    playerHP = 100;
+    player.position.set(0, 0, 0);
+    hideOverlay();
 }
 
 /** --- УПРАВЛЕНИЕ --- **/
 window.addEventListener('touchstart', e => { for(let t of e.touches) if(t.clientX > window.innerWidth/2) lastTX = t.clientX; });
 window.addEventListener('touchmove', e => {
+    if(isDead) return;
     e.preventDefault();
     for(let t of e.touches) {
         if(t.clientX < window.innerWidth/2) {
@@ -207,6 +230,7 @@ window.addEventListener('touchmove', e => {
 window.addEventListener('touchend', () => { joyX = joyY = 0; document.getElementById('stick').style.transform = 'translate(0,0)'; });
 
 document.getElementById('attack-btn').addEventListener('touchstart', e => {
+    if(isDead) return;
     e.preventDefault();
     enemies.forEach((en, i) => {
         if(player.position.distanceTo(en.position) < 4) {
@@ -222,54 +246,7 @@ document.getElementById('attack-btn').addEventListener('touchstart', e => {
     if(boss && player.position.distanceTo(boss.position) < 8) {
         boss.userData.hp -= 10;
         document.getElementById('boss-hp-fill').style.width = (boss.userData.hp/boss.userData.maxHp*100) + "%";
-        if(boss.userData.hp <= 0) { alert("ПОБЕДА НАД ИЛОНОМ!"); location.reload(); }
-    }
-});
-
-/** --- ЦИКЛ --- **/
-function animate() {
-    requestAnimationFrame(animate);
-    const dt = clock.getDelta();
-    const now = Date.now();
-
-    if(Math.abs(joyX)>0.1 || Math.abs(joyY)>0.1) {
-        const move = new THREE.Vector3(joyX, 0, joyY);
-        move.applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
-        player.position.addScaledVector(move, 8 * dt);
-        player.rotation.y = yaw + Math.atan2(-joyX, -joyY);
-    }
-
-    // Регенерация
-    if(now - lastHit > 3000 && playerHP < maxHP) {
-        playerHP += 5 * dt; if(playerHP > maxHP) playerHP = maxHP;
-        document.getElementById('regen-text').style.display = 'block';
-        if(Math.random() > 0.8) spawnRegenParticle();
-    } else { document.getElementById('regen-text').style.display = 'none'; }
-    document.getElementById('hp-fill').style.width = playerHP + "%";
-
-    // Частицы
-    for(let i=particles.length-1; i>=0; i--) {
-        particles[i].position.y += dt; particles[i].userData.l -= dt;
-        particles[i].material.opacity = particles[i].userData.l;
-        if(particles[i].userData.l <= 0) { scene.remove(particles[i]); particles.splice(i, 1); }
-    }
-
-    // Враги
-    enemies.forEach(e => {
-        const d = player.position.distanceTo(e.position);
-        if(d < 15) {
-            e.lookAt(player.position.x, 0.7, player.position.z);
-            e.position.addScaledVector(new THREE.Vector3().subVectors(player.position, e.position).normalize(), 3.5 * dt);
-            if(d < 1.5) { playerHP -= 10*dt; lastHit = now; if(playerHP <= 0) location.reload(); }
-        }
-    });
-
-    if(boss) boss.lookAt(player.position.x, 3, player.position.z);
-
-    camera.position.set(player.position.x + Math.sin(yaw)*9, player.position.y+5, player.position.z + Math.cos(yaw)*9);
-    camera.lookAt(player.position.x, player.position.y+1, player.position.z);
-    renderer.render(scene, camera);
-}
-</script>
-</body>
-</html>
+        if(boss.userData.hp <= 0) { 
+            scene.remove(boss); boss = null;
+            document.getElementById('boss-hud').style.display = 'none';
+            showOverlay("VICTORY!", "Босс повержен!
