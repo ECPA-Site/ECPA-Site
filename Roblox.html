@@ -2,103 +2,82 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Roblox Mobile - Final Fix</title>
+    <title>Roblox Mobile - Ultra Stable</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: sans-serif; touch-action: none; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
         
-        /* Экран выбора - теперь максимально простой и надежный */
+        /* Экран выбора - перекрывает всё */
         #char-select { 
-            position: fixed; inset: 0; 
-            background: #2c3e50; 
-            display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; 
-            z-index: 10000; color: white; 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #1a1a1a; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 9999;
         }
-        .char-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .char-btn { 
-            padding: 30px 20px; border-radius: 15px; border: 4px solid white; 
-            font-weight: bold; cursor: pointer; text-align: center; width: 140px;
-            font-size: 18px; pointer-events: auto;
+        .btn-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .hero-btn { 
+            width: 140px; height: 80px; border: 3px solid #fff; border-radius: 10px;
+            color: #fff; font-weight: bold; font-size: 16px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
         }
-        .red { background: #e74c3c; } .brown { background: #795548; }
-        .blue { background: #3498db; } .yellow { background: #f1c40f; color: black; }
+
+        /* Цвета героев */
+        .red { background: red; } .brown { background: #5d4037; }
+        .blue { background: blue; } .yellow { background: yellow; color: #000; }
 
         /* Игровой интерфейс */
-        #gui, #controls, #slots-btn { display: none; }
-        #gui { position: fixed; top: 10px; left: 10px; z-index: 100; color: white; pointer-events: none; }
-        .hud-card { background: rgba(0,0,0,0.6); padding: 12px; border-radius: 12px; }
-        .hp-bar { width: 160px; height: 12px; background: #222; border-radius: 6px; margin: 5px 0; overflow: hidden; }
-        #hp-fill { width: 100%; height: 100%; background: #2ecc71; transition: 0.3s; }
-        
-        #overlay { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8); 
-            display: none; flex-direction: column; align-items: center; 
-            justify-content: center; z-index: 2000; color: white; 
-            opacity: 0; transition: opacity 0.5s; pointer-events: none;
-        }
+        #game-ui { display: none; position: fixed; top: 10px; left: 10px; z-index: 100; color: white; pointer-events: none; }
+        .bar { width: 150px; height: 10px; background: #333; margin-top: 5px; }
+        #hp-fill { width: 100%; height: 100%; background: #0f0; }
 
-        #slots-btn { position: fixed; top: 10px; right: 10px; z-index: 101; padding: 10px; background: #000; color: white; border: 1px solid white; border-radius: 8px; }
-        
         /* Управление */
-        #joystick { position: fixed; bottom: 50px; left: 50px; width: 100px; height: 100px; border: 2px solid white; border-radius: 50%; z-index: 50; }
-        #stick { position: absolute; top: 25px; left: 25px; width: 50px; height: 50px; background: white; border-radius: 50%; opacity: 0.7; }
-        #attack-btn { position: fixed; bottom: 60px; right: 50px; width: 80px; height: 80px; background: #e74c3c; border: 4px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; z-index: 50; color: white; }
+        #controls { display: none; }
+        #joy-zone { position: fixed; bottom: 40px; left: 40px; width: 100px; height: 100px; border: 2px solid #fff; border-radius: 50%; z-index: 10; }
+        #stick { position: absolute; top: 25px; left: 25px; width: 50px; height: 50px; background: #fff; border-radius: 50%; opacity: 0.5; }
+        #atk-btn { position: fixed; bottom: 40px; right: 40px; width: 80px; height: 80px; background: red; border: 3px solid #fff; border-radius: 50%; z-index: 10; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 30px; }
+        
+        /* Сообщения */
+        #msg { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 500; color: white; font-size: 30px; }
     </style>
 </head>
 <body>
 
 <div id="char-select">
-    <h1>ВЫБЕРИ ГЕРОЯ</h1>
-    <div class="char-grid">
-        <div class="char-btn red" onclick="initGame('RedShadow', 0xff0000)">RedShadow</div>
-        <div class="char-btn brown" onclick="initGame('MrFlicer', 0x5d4037)">MrFlicer</div>
-        <div class="char-btn blue" onclick="initGame('Joper546', 0x0000ff)">Joper546</div>
-        <div class="char-btn yellow" onclick="initGame('Dobrikotikleast', 0xffff00)">Dobrikotikleast</div>
+    <h1 style="color:white">ВЫБЕРИ ГЕРОЯ</h1>
+    <div class="btn-container">
+        <div class="hero-btn red" onclick="start('RedShadow', 0xff0000)">RedShadow</div>
+        <div class="hero-btn brown" onclick="start('MrFlicer', 0x5d4037)">MrFlicer</div>
+        <div class="hero-btn blue" onclick="start('Joper546', 0x0000ff)">Joper546</div>
+        <div class="hero-btn yellow" onclick="start('Dobrikotikleast', 0xffff00)">Dobrikotikleast</div>
     </div>
 </div>
 
-<div id="overlay">
-    <h1 id="overlay-title">GAME OVER</h1>
-    <p id="overlay-sub">Воскрешение...</p>
+<div id="game-ui">
+    <b id="name-tag">Игрок</b>
+    <div class="bar"><div id="hp-fill"></div></div>
+    <div>💎: <span id="coins">0</span></div>
 </div>
 
-<div id="gui">
-    <div class="hud-card">
-        <b id="p-name">...</b>
-        <div class="hp-bar"><div id="hp-fill"></div></div>
-        <div id="regen-text" style="font-size:10px; color:#2ecc71; display:none;">РЕГЕНЕРАЦИЯ...</div>
-        <div>💎: <span id="coin-txt">0</span> / 50</div>
-    </div>
-</div>
-
-<button id="slots-btn" onclick="toggleSaveMenu(true)">💾 СЛОТЫ</button>
+<div id="msg">GAME OVER</div>
 
 <div id="controls">
-    <div id="joystick"><div id="stick"></div></div>
-    <div id="attack-btn" ontouchstart="handleAttack(event)">⚔️</div>
+    <div id="joy-zone"><div id="stick"></div></div>
+    <div id="atk-btn" onmousedown="attack()" ontouchstart="attack()">⚔️</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <script>
-let scene, camera, renderer, player, pMesh, boss;
-let playerHP = 100, coins = 0, lastHit = 0, isDead = false;
-let joyX = 0, joyY = 0, yaw = 0, lastTX = 0;
-let currentHero = "", heroColor = 0;
+let scene, camera, renderer, player, hp = 100, coins = 0, isDead = false;
+let joyX = 0, joyY = 0, yaw = 0, lastX = 0, lastHit = 0;
 const enemies = [], clock = new THREE.Clock();
 
-function initGame(name, color) {
-    currentHero = name; heroColor = color;
-    
-    // Скрываем меню и показываем игру
+function start(name, color) {
     document.getElementById('char-select').style.display = 'none';
-    document.getElementById('gui').style.display = 'block';
+    document.getElementById('game-ui').style.display = 'block';
     document.getElementById('controls').style.display = 'block';
-    document.getElementById('slots-btn').style.display = 'block';
-    document.getElementById('p-name').innerText = name;
+    document.getElementById('name-tag').innerText = name;
 
-    // Инициализация Three.js
+    // Сцена
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB);
     camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
@@ -106,15 +85,16 @@ function initGame(name, color) {
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({color: 0x27ae60}));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({color: 0x27ae60}));
     ground.rotation.x = -Math.PI/2;
     scene.add(ground);
 
+    // Игрок
     player = new THREE.Group();
-    pMesh = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.4, 0.6), new THREE.MeshStandardMaterial({color: color}));
-    pMesh.position.y = 0.7;
-    player.add(pMesh);
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.4, 0.6), new THREE.MeshStandardMaterial({color: color}));
+    body.position.y = 0.7;
+    player.add(body);
     scene.add(player);
 
     for(let i=0; i<5; i++) spawnEnemy();
@@ -122,71 +102,88 @@ function initGame(name, color) {
 }
 
 function spawnEnemy() {
-    const e = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.4, 0.8), new THREE.MeshStandardMaterial({color: 0x333333}));
-    e.position.set(Math.random()*60-30, 0.7, Math.random()*60-30);
+    const e = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.4, 0.8), new THREE.MeshStandardMaterial({color: 0x333}));
+    e.position.set(Math.random()*40-20, 0.7, Math.random()*40-20);
     e.userData = { hp: 30 };
     enemies.push(e);
     scene.add(e);
 }
 
-function handleAttack(e) {
-    if(e) e.preventDefault();
+function attack() {
     if(isDead) return;
-    enemies.forEach((en, i) => {
-        if(player.position.distanceTo(en.position) < 4) {
-            en.userData.hp -= 15;
-            if(en.userData.hp <= 0) {
-                scene.remove(en); enemies.splice(i,1);
-                coins += 5; document.getElementById('coin-txt').innerText = coins;
+    enemies.forEach((e, i) => {
+        if(player.position.distanceTo(e.position) < 4) {
+            e.userData.hp -= 15;
+            if(e.userData.hp <= 0) {
+                scene.remove(e); enemies.splice(i, 1);
+                coins += 5; document.getElementById('coins').innerText = coins;
                 setTimeout(spawnEnemy, 2000);
             }
         }
     });
 }
 
-// Управление камерой и джойстиком
-window.addEventListener('touchstart', e => { 
-    for(let t of e.touches) if(t.clientX > window.innerWidth/2) lastTX = t.clientX; 
-});
-
+// Управление
+window.addEventListener('touchstart', e => { lastX = e.touches[0].clientX; });
 window.addEventListener('touchmove', e => {
-    if(isDead || !scene) return;
-    for(let t of e.touches) {
-        if(t.clientX < window.innerWidth/2) {
-            const r = document.getElementById('joystick').getBoundingClientRect();
-            const dx = t.clientX - (r.left + 50), dy = t.clientY - (r.top + 50);
-            const d = Math.min(Math.hypot(dx, dy), 40);
-            const a = Math.atan2(dy, dx);
-            joyX = Math.cos(a)*(d/40); joyY = Math.sin(a)*(d/40);
-            document.getElementById('stick').style.transform = `translate(${Math.cos(a)*d}px, ${Math.sin(a)*d}px)`;
-        } else {
-            yaw -= (t.clientX - lastTX) * 0.008; lastTX = t.clientX;
-        }
+    if(isDead) return;
+    const t = e.touches[0];
+    if(t.clientX < window.innerWidth/2) {
+        const r = document.getElementById('joy-zone').getBoundingClientRect();
+        const dx = t.clientX - (r.left + 50), dy = t.clientY - (r.top + 50);
+        const d = Math.min(Math.hypot(dx, dy), 40);
+        const a = Math.atan2(dy, dx);
+        joyX = Math.cos(a)*(d/40); joyY = Math.sin(a)*(d/40);
+        document.getElementById('stick').style.transform = `translate(${Math.cos(a)*d}px, ${Math.sin(a)*d}px)`;
+    } else {
+        yaw -= (t.clientX - lastX) * 0.01;
+        lastX = t.clientX;
     }
-}, {passive: false});
-
+});
 window.addEventListener('touchend', () => { joyX = 0; joyY = 0; document.getElementById('stick').style.transform = 'translate(0,0)'; });
 
 function animate() {
     requestAnimationFrame(animate);
     const dt = clock.getDelta();
-    const now = Date.now();
 
     if(!isDead) {
         // Движение
-        if(Math.abs(joyX)>0.1 || Math.abs(joyY)>0.1) {
+        if(Math.abs(joyX) > 0.1 || Math.abs(joyY) > 0.1) {
             const move = new THREE.Vector3(joyX, 0, joyY);
             move.applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
-            player.position.addScaledVector(move, 8 * dt);
+            player.position.addScaledVector(move, 7 * dt);
             player.rotation.y = yaw + Math.atan2(-joyX, -joyY);
         }
 
         // Регенерация
-        if(now - lastHit > 3000 && playerHP < 100) {
-            playerHP += 5 * dt;
-            document.getElementById('regen-text').style.display = 'block';
-        } else { document.getElementById('regen-text').style.display = 'none'; }
+        if(Date.now() - lastHit > 3000 && hp < 100) hp += 4 * dt;
 
         // Враги
         enemies.forEach(e => {
-            const d = player
+            const d = player.position.distanceTo(e.position);
+            if(d < 15) {
+                e.lookAt(player.position.x, 0.7, player.position.z);
+                e.position.addScaledVector(new THREE.Vector3().subVectors(player.position, e.position).normalize(), 3 * dt);
+                if(d < 1.4) {
+                    hp -= 20 * dt; lastHit = Date.now();
+                    if(hp <= 0) {
+                        isDead = true;
+                        document.getElementById('msg').style.display = 'flex';
+                        setTimeout(() => {
+                            isDead = false; hp = 100; player.position.set(0,0,0);
+                            document.getElementById('msg').style.display = 'none';
+                        }, 3000);
+                    }
+                }
+            }
+        });
+    }
+
+    document.getElementById('hp-fill').style.width = hp + "%";
+    camera.position.set(player.position.x + Math.sin(yaw)*8, player.position.y+5, player.position.z + Math.cos(yaw)*8);
+    camera.lookAt(player.position.x, player.position.y+1, player.position.z);
+    renderer.render(scene, camera);
+}
+</script>
+</body>
+</html>
