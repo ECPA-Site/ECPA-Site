@@ -2,15 +2,15 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Roblox Mobile - New Slot System</title>
+    <title>Roblox Mobile - Slot System Pro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; touch-action: none; }
         
-        /* Экран выбора */
+        /* Экран выбора (изначально скрыт, вызывается кнопкой "Новая игра") */
         #char-select { 
-            position: absolute; inset: 0; background: #1a1a1a; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; 
+            position: absolute; inset: 0; background: rgba(26, 26, 26, 0.95); 
+            display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; 
         }
         .btn-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .hero-btn { 
@@ -21,43 +21,47 @@
         .red { background: red; } .brown { background: #5d4037; }
         .blue { background: blue; } .yellow { background: yellow; color: #000; }
 
-        /* Интерфейс */
+        /* Стартовый экран и Меню слотов */
+        #save-menu { 
+            position: fixed; inset: 0; background: #1a1a1a; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5000; color: white; 
+        }
+        .slot { background: #222; margin: 8px; padding: 15px; border-radius: 10px; width: 280px; border: 1px solid #444; text-align: center; }
+        .slot b { display: block; margin-bottom: 5px; color: #fff; }
+        .slot button { margin: 5px; padding: 10px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; width: 100%; }
+        .new-btn { background: #2ecc71; color: white; }
+        .load-btn { background: #3498db; color: white; }
+        .resave-btn { background: #e67e22; color: white; font-size: 10px; }
+
+        /* Интерфейс и Управление */
         #game-ui { display: none; position: fixed; top: 10px; left: 10px; z-index: 100; color: white; pointer-events: none; }
         .bar { width: 150px; height: 10px; background: #333; margin-top: 5px; }
         #hp-fill { width: 100%; height: 100%; background: #0f0; transition: width 0.3s; }
-
-        /* Кнопки слотов */
         #slots-open { position: fixed; top: 10px; right: 10px; z-index: 1000; padding: 10px; background: #333; color: white; border: 1px solid white; border-radius: 5px; display: none; }
-        #save-menu { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.95); 
-            display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 5000; color: white; 
-        }
-        .slot { background: #222; margin: 8px; padding: 15px; border-radius: 10px; width: 260px; border: 1px solid #444; text-align: center; }
-        .slot b { color: #aaa; }
-        .slot button { margin: 5px; padding: 8px 15px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; }
-        .save-btn { background: #2ecc71; color: white; }
-        .load-btn { background: #3498db; color: white; }
-
-        /* Управление */
         #controls { display: none; }
         #joy-zone { position: fixed; bottom: 40px; left: 40px; width: 100px; height: 100px; border: 2px solid #fff; border-radius: 50%; z-index: 10; }
         #stick { position: absolute; top: 25px; left: 25px; width: 50px; height: 50px; background: #fff; border-radius: 50%; opacity: 0.5; }
         #atk-btn { position: fixed; bottom: 40px; right: 40px; width: 80px; height: 80px; background: red; border: 3px solid #fff; border-radius: 50%; z-index: 10; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 30px; }
-        
         #msg { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 4000; color: white; font-size: 30px; }
     </style>
 </head>
 <body>
 
 <div id="char-select">
-    <h1 style="color:white; margin-bottom: 20px;">НОВЫЙ ИГРОК: ВЫБЕРИ ГЕРОЯ</h1>
+    <h1 style="color:white; margin-bottom: 20px;">ВЫБЕРИ ГЕРОЯ ДЛЯ СЛОТА</h1>
     <div class="btn-container">
-        <div class="hero-btn red" onclick="start('RedShadow', 0xff0000)">RedShadow</div>
-        <div class="hero-btn brown" onclick="start('MrFlicer', 0x5d4037)">MrFlicer</div>
-        <div class="hero-btn blue" onclick="start('Joper546', 0x0000ff)">Joper546</div>
-        <div class="hero-btn yellow" onclick="start('Dobrikotikleast', 0xffff00)">Dobrikotikleast</div>
+        <div class="hero-btn red" onclick="confirmHero('RedShadow', 0xff0000)">RedShadow</div>
+        <div class="hero-btn brown" onclick="confirmHero('MrFlicer', 0x5d4037)">MrFlicer</div>
+        <div class="hero-btn blue" onclick="confirmHero('Joper546', 0x0000ff)">Joper546</div>
+        <div class="hero-btn yellow" onclick="confirmHero('Dobrikotikleast', 0xffff00)">Dobrikotikleast</div>
     </div>
-    <p style="color: #666; margin-top: 20px;">Или загрузите слот через меню в игре</p>
+    <button onclick="closeCharSelect()" style="margin-top: 20px; background: none; color: gray; border: none;">Отмена</button>
+</div>
+
+<div id="save-menu">
+    <h1 style="margin-bottom: 30px;">ROBLOX MOBILE</h1>
+    <div id="slots-list"></div>
+    <button id="back-to-game" onclick="toggleMenu(false)" style="margin-top:20px; padding:10px 40px; background: #555; color: white; display: none; border-radius: 5px;">ВЕРНУТЬСЯ В ИГРУ</button>
 </div>
 
 <div id="game-ui">
@@ -66,13 +70,7 @@
     <div>💎: <span id="coins">0</span></div>
 </div>
 
-<button id="slots-open" onclick="toggleMenu(true)">💾 СЛОТЫ</button>
-
-<div id="save-menu">
-    <h2>СИСТЕМА СОХРАНЕНИЙ</h2>
-    <div id="slots-list"></div>
-    <button onclick="toggleMenu(false)" style="margin-top:20px; padding:10px 40px; background: #555; color: white; border: none; border-radius: 5px;">ЗАКРЫТЬ</button>
-</div>
+<button id="slots-open" onclick="toggleMenu(true)">💾 МЕНЮ</button>
 
 <div id="msg">GAME OVER</div>
 
@@ -87,85 +85,103 @@
 let scene, camera, renderer, player, playerBody;
 let hp = 100, coins = 0, isDead = false, currentHero = "", heroColor = 0;
 let joyX = 0, joyY = 0, yaw = 0, lastX = 0, lastHit = 0;
+let activeSlot = null; // Какой слот мы сейчас используем
 const enemies = [], clock = new THREE.Clock();
 
-/** --- ЛОГИКА СЛОТОВ --- **/
+// При запуске сразу показываем меню слотов
+renderSlots();
+
 function toggleMenu(show) {
     document.getElementById('save-menu').style.display = show ? 'flex' : 'none';
-    if(show) renderSlots();
+    if(show) {
+        document.getElementById('back-to-game').style.display = scene ? 'block' : 'none';
+        renderSlots();
+    }
 }
 
-function saveGame(slotId) {
-    if(!currentHero) {
-        alert("Сначала выберите персонажа!");
-        return;
-    }
-    const data = { 
-        hp: hp, 
-        coins: coins, 
-        hero: currentHero, 
-        color: heroColor, 
-        date: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString()
-    };
-    localStorage.setItem('game_slot_' + slotId, JSON.stringify(data));
-    renderSlots();
+function openNewGame(slotId) {
+    activeSlot = slotId;
+    document.getElementById('char-select').style.display = 'flex';
 }
 
-function loadGame(slotId) {
-    const rawData = localStorage.getItem('game_slot_' + slotId);
-    if(!rawData) return;
+function closeCharSelect() {
+    document.getElementById('char-select').style.display = 'none';
+}
+
+// Когда выбрали героя для конкретного слота
+function confirmHero(name, color) {
+    currentHero = name;
+    heroColor = color;
+    hp = 100;
+    coins = 0;
     
-    const data = JSON.parse(rawData);
+    // Сразу сохраняем этот новый старт в слот
+    saveToActiveSlot();
     
-    // Если игра еще не запущена (мы в меню)
-    if(!scene) {
-        start(data.hero, data.color);
-    }
-    
-    // Применяем данные
-    hp = data.hp;
-    coins = data.coins;
-    currentHero = data.hero;
-    heroColor = data.color;
-    
-    document.getElementById('coins').innerText = coins;
-    document.getElementById('name-tag').innerText = currentHero;
-    if(playerBody) playerBody.material.color.setHex(heroColor);
-    
+    document.getElementById('char-select').style.display = 'none';
     toggleMenu(false);
+    
+    if(!scene) startSystem(name, color);
+    else updatePlayerVisual(name, color);
+}
+
+function saveToActiveSlot() {
+    if(!activeSlot) return;
+    const data = { 
+        hp: hp, coins: coins, hero: currentHero, color: heroColor, 
+        date: new Date().toLocaleTimeString() 
+    };
+    localStorage.setItem('roblox_slot_' + activeSlot, JSON.stringify(data));
+}
+
+function loadFromSlot(slotId) {
+    activeSlot = slotId;
+    const data = JSON.parse(localStorage.getItem('roblox_slot_' + slotId));
+    if(data) {
+        hp = data.hp;
+        coins = data.coins;
+        currentHero = data.hero;
+        heroColor = data.color;
+        
+        toggleMenu(false);
+        if(!scene) startSystem(data.hero, data.color);
+        else updatePlayerVisual(data.hero, data.color);
+        
+        document.getElementById('coins').innerText = coins;
+    }
 }
 
 function renderSlots() {
     const list = document.getElementById('slots-list');
     list.innerHTML = '';
     for(let i=1; i<=4; i++) {
-        const data = localStorage.getItem('game_slot_' + i);
-        const d = data ? JSON.parse(data) : null;
+        const raw = localStorage.getItem('roblox_slot_' + i);
+        const d = raw ? JSON.parse(raw) : null;
         
         list.innerHTML += `
             <div class="slot">
-                <b>СЛОТ ${i}</b><br>
-                <span style="font-size: 12px; color: ${d ? '#2ecc71' : '#666'}">
-                    ${d ? d.hero + ' (💎' + d.coins + ')<br>' + d.date : 'ПУСТОЙ СЛОТ'}
-                </span><br>
-                <button class="save-btn" onclick="saveGame(${i})">СОХРАНИТЬ</button>
-                ${d ? `<button class="load-btn" onclick="loadGame(${i})">ЗАГРУЗИТЬ</button>` : ''}
+                <b>СЛОТ ${i}</b>
+                ${d ? 
+                    `<small>${d.hero} | 💎 ${d.coins}</small>
+                     <button class="load-btn" onclick="loadFromSlot(${i})">ПРОДОЛЖИТЬ</button>
+                     <button class="resave-btn" onclick="openNewGame(${i})">СБРОСИТЬ И НОВАЯ ИГРА</button>` : 
+                    `<button class="new-btn" onclick="openNewGame(${i})">+ НОВАЯ ИГРА</button>`
+                }
             </div>`;
     }
 }
 
-/** --- ЗАПУСК И ГРАФИКА --- **/
-function start(name, color) {
-    currentHero = name; 
-    heroColor = color;
-    
-    document.getElementById('char-select').style.display = 'none';
+function updatePlayerVisual(name, color) {
+    document.getElementById('name-tag').innerText = name;
+    if(playerBody) playerBody.material.color.setHex(color);
+}
+
+/** --- ГРАФИКА И ЗАПУСК --- **/
+function startSystem(name, color) {
     document.getElementById('game-ui').style.display = 'block';
     document.getElementById('controls').style.display = 'block';
     document.getElementById('slots-open').style.display = 'block';
     document.getElementById('name-tag').innerText = name;
-
-    if(scene) return; // Чтобы не создавать сцену дважды при загрузке
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB);
@@ -187,6 +203,9 @@ function start(name, color) {
 
     for(let i=0; i<5; i++) spawnEnemy();
     animate();
+    
+    // Автосохранение каждые 10 секунд
+    setInterval(saveToActiveSlot, 10000);
 }
 
 function spawnEnemy() {
@@ -205,6 +224,7 @@ function attack() {
             if(e.userData.hp <= 0) {
                 scene.remove(e); enemies.splice(i, 1);
                 coins += 5; document.getElementById('coins').innerText = coins;
+                saveToActiveSlot(); // Сохраняем после убийства
                 setTimeout(spawnEnemy, 2000);
             }
         }
@@ -214,63 +234,11 @@ function attack() {
 /** --- УПРАВЛЕНИЕ --- **/
 window.addEventListener('touchstart', e => { if(e.touches[0]) lastX = e.touches[0].clientX; });
 window.addEventListener('touchmove', e => {
-    if(isDead || !scene) return;
+    if(isDead || !scene || document.getElementById('save-menu').style.display === 'flex') return;
     const t = e.touches[0];
     if(t.clientX < window.innerWidth / 2) {
         const r = document.getElementById('joy-zone').getBoundingClientRect();
         const dx = t.clientX - (r.left + 50), dy = t.clientY - (r.top + 50);
         const d = Math.min(Math.hypot(dx, dy), 40);
         const a = Math.atan2(dy, dx);
-        joyX = Math.cos(a)*(d/40); joyY = Math.sin(a)*(d/40);
-        document.getElementById('stick').style.transform = `translate(${Math.cos(a)*d}px, ${Math.sin(a)*d}px)`;
-    } else {
-        yaw -= (t.clientX - lastX) * 0.01;
-        lastX = t.clientX;
-    }
-});
-window.addEventListener('touchend', () => { joyX = 0; joyY = 0; document.getElementById('stick').style.transform = 'translate(0,0)'; });
-
-function animate() {
-    requestAnimationFrame(animate);
-    const dt = clock.getDelta();
-
-    if(!isDead && scene) {
-        if(Math.abs(joyX) > 0.1 || Math.abs(joyY) > 0.1) {
-            const move = new THREE.Vector3(joyX, 0, joyY);
-            move.applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
-            player.position.addScaledVector(move, 7 * dt);
-            player.rotation.y = yaw + Math.atan2(-joyX, -joyY);
-        }
-
-        if(Date.now() - lastHit > 3000 && hp < 100) hp += 5 * dt;
-
-        enemies.forEach(e => {
-            const d = player.position.distanceTo(e.position);
-            if(d < 15) {
-                e.lookAt(player.position.x, 0.7, player.position.z);
-                e.position.addScaledVector(new THREE.Vector3().subVectors(player.position, e.position).normalize(), 3 * dt);
-                if(d < 1.4) {
-                    hp -= 20 * dt; lastHit = Date.now();
-                    if(hp <= 0) {
-                        isDead = true;
-                        document.getElementById('msg').style.display = 'flex';
-                        setTimeout(() => {
-                            isDead = false; hp = 100; player.position.set(0,0,0);
-                            document.getElementById('msg').style.display = 'none';
-                        }, 3000);
-                    }
-                }
-            }
-        });
-    }
-
-    if(scene) {
-        document.getElementById('hp-fill').style.width = hp + "%";
-        camera.position.set(player.position.x + Math.sin(yaw)*8, player.position.y+5, player.position.z + Math.cos(yaw)*8);
-        camera.lookAt(player.position.x, player.position.y+1, player.position.z);
-        renderer.render(scene, camera);
-    }
-}
-</script>
-</body>
-</html>
+        joyX = Math.cos(a)*(d/40); joyY = Math.sin(a)*(d/40
